@@ -1,38 +1,138 @@
-import { type User, type InsertUser } from "@shared/schema";
-import { randomUUID } from "crypto";
-
-// modify the interface with any CRUD methods
-// you might need
+import { 
+  torrents, 
+  users,
+  type Torrent, 
+  type InsertTorrent, 
+  type UpdateTorrentRequest,
+  type TorrentsQueryParams,
+  type TorrentWithAuthor
+} from "@shared/schema";
+import { db } from "./db";
+import { eq, desc, ilike, and } from "drizzle-orm";
 
 export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  // Torrents
+  getTorrents(params?: TorrentsQueryParams): Promise<TorrentWithAuthor[]>;
+  getTorrent(id: number): Promise<TorrentWithAuthor | undefined>;
+  createTorrent(torrent: InsertTorrent): Promise<Torrent>;
+  updateTorrent(id: number, updates: UpdateTorrentRequest): Promise<Torrent>;
+  deleteTorrent(id: number): Promise<void>;
+  
+  // Helpers
+  getUserTorrents(userId: string): Promise<TorrentWithAuthor[]>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
+export class DatabaseStorage implements IStorage {
+  async getTorrents(params?: TorrentsQueryParams): Promise<TorrentWithAuthor[]> {
+    let query = db.select({
+      id: torrents.id,
+      title: torrents.title,
+      description: torrents.description,
+      magnetLink: torrents.magnetLink,
+      imageUrl: torrents.imageUrl,
+      category: torrents.category,
+      createdById: torrents.createdById,
+      createdAt: torrents.createdAt,
+      author: {
+        username: users.email, // Using email as username/display since we don't enforce unique username in auth schema yet or it's email based
+        firstName: users.firstName,
+        lastName: users.lastName,
+        profileImageUrl: users.profileImageUrl,
+      }
+    })
+    .from(torrents)
+    .leftJoin(users, eq(torrents.createdById, users.id));
 
-  constructor() {
-    this.users = new Map();
+    const conditions = [];
+
+    if (params?.search) {
+      conditions.push(ilike(torrents.title, `%${params.search}%`));
+    }
+
+    if (params?.category && params.category !== 'All') {
+      conditions.push(eq(torrents.category, params.category));
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as any;
+    }
+
+    // Default sort by newest
+    if (!params?.sort || params.sort === 'newest') {
+      query = query.orderBy(desc(torrents.createdAt)) as any;
+    } 
+    // Add other sorts if needed
+
+    return await query;
   }
 
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+  async getTorrent(id: number): Promise<TorrentWithAuthor | undefined> {
+    const [torrent] = await db.select({
+      id: torrents.id,
+      title: torrents.title,
+      description: torrents.description,
+      magnetLink: torrents.magnetLink,
+      imageUrl: torrents.imageUrl,
+      category: torrents.category,
+      createdById: torrents.createdById,
+      createdAt: torrents.createdAt,
+      author: {
+        username: users.email,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        profileImageUrl: users.profileImageUrl,
+      }
+    })
+    .from(torrents)
+    .leftJoin(users, eq(torrents.createdById, users.id))
+    .where(eq(torrents.id, id));
+    
+    return torrent;
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+  async createTorrent(insertTorrent: InsertTorrent): Promise<Torrent> {
+    const [torrent] = await db
+      .insert(torrents)
+      .values(insertTorrent)
+      .returning();
+    return torrent;
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+  async updateTorrent(id: number, updates: UpdateTorrentRequest): Promise<Torrent> {
+    const [torrent] = await db
+      .update(torrents)
+      .set(updates)
+      .where(eq(torrents.id, id))
+      .returning();
+    return torrent;
+  }
+
+  async deleteTorrent(id: number): Promise<void> {
+    await db.delete(torrents).where(eq(torrents.id, id));
+  }
+
+  async getUserTorrents(userId: string): Promise<TorrentWithAuthor[]> {
+     return await db.select({
+      id: torrents.id,
+      title: torrents.title,
+      description: torrents.description,
+      magnetLink: torrents.magnetLink,
+      imageUrl: torrents.imageUrl,
+      category: torrents.category,
+      createdById: torrents.createdById,
+      createdAt: torrents.createdAt,
+      author: {
+        username: users.email,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        profileImageUrl: users.profileImageUrl,
+      }
+    })
+    .from(torrents)
+    .leftJoin(users, eq(torrents.createdById, users.id))
+    .where(eq(torrents.createdById, userId))
+    .orderBy(desc(torrents.createdAt));
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
