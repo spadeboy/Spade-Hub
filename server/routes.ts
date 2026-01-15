@@ -1,11 +1,11 @@
 import type { Express } from "express";
 import type { Server } from "http";
-import { setupAuth } from "./replit_integrations/auth";
-import { registerAuthRoutes } from "./replit_integrations/auth";
+import { setupAuth } from "./hub_integrations/auth";
+import { registerAuthRoutes } from "./hub_integrations/auth";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
-import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
+import { registerObjectStorageRoutes } from "./hub_integrations/object_storage";
 import { db } from "./db";
 import { users, torrents } from "@shared/schema";
 import { eq } from "drizzle-orm";
