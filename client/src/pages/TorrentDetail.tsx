@@ -83,9 +83,17 @@ export default function TorrentDetail() {
           {/* Left Column: Image & Actions */}
           <div className="space-y-6">
             <div className="rounded-2xl overflow-hidden bg-muted aspect-[3/4] shadow-2xl relative group">
-              <div className="w-full h-full flex items-center justify-center bg-card border border-white/5">
-                <span className="text-4xl text-muted-foreground/20 font-display font-bold">No Cover</span>
-              </div>
+              {torrent.imageUrl ? (
+                <img 
+                  src={torrent.imageUrl} 
+                  alt={torrent.title} 
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-card border border-white/5">
+                  <span className="text-4xl text-muted-foreground/20 font-display font-bold">No Cover</span>
+                </div>
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
                 <Badge className="bg-primary hover:bg-primary text-white border-none text-lg py-1 px-4">
                   {torrent.category}
