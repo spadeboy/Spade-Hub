@@ -3,8 +3,10 @@ import { type TorrentWithAuthor } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { Download, Film, Gamepad2, Globe, Music, Save, Terminal, User } from "lucide-react";
+import { Download, Film, Gamepad2, Globe, Music, Save, Terminal } from "lucide-react";
 import { motion } from "framer-motion";
+import { FaWindows, FaApple, FaAndroid } from "react-icons/fa";
+import { SiQbittorrent } from "react-icons/si";
 
 const categoryIcons: Record<string, any> = {
   Movies: Film,
@@ -17,6 +19,29 @@ const categoryIcons: Record<string, any> = {
 export function TorrentCard({ torrent }: { torrent: TorrentWithAuthor }) {
   const Icon = categoryIcons[torrent.category] || Globe;
 
+  // --- DEVICE DETECTION LOGIC ---
+  const getDeviceClient = () => {
+    // We check the browser's userAgent to determine the icon/text
+    const ua = navigator.userAgent.toLowerCase();
+    
+    if (ua.includes("iphone") || ua.includes("ipad")) {
+      return { name: "iTorrent", icon: <FaApple className="w-3.5 h-3.5 text-gray-300" /> };
+    }
+    if (ua.includes("macintosh")) {
+      return { name: "iTransmission", icon: <FaApple className="w-3.5 h-3.5 text-red-500" /> };
+    }
+    if (ua.includes("android")) {
+      return { name: "Flud", icon: <FaAndroid className="w-3.5 h-3.5 text-green-500" /> };
+    }
+    if (ua.includes("windows")) {
+      return { name: "qbittorrent", icon: <FaWindows className="w-3.5 h-3.5 text-blue-400" /> };
+    }
+    // Default fallback
+    return { name: "qbittorrent", icon: <SiQbittorrent className="w-3.5 h-3.5 text-primary" /> };
+  };
+
+  const client = getDeviceClient();
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -27,7 +52,7 @@ export function TorrentCard({ torrent }: { torrent: TorrentWithAuthor }) {
         <div className="relative h-48 overflow-hidden bg-muted/50">
           {torrent.imageUrl ? (
             <img 
-              src={torrent.imageUrl.startsWith("/objects/") ? torrent.imageUrl : torrent.imageUrl} 
+              src={torrent.imageUrl} 
               alt={torrent.title} 
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
@@ -49,8 +74,13 @@ export function TorrentCard({ torrent }: { torrent: TorrentWithAuthor }) {
               {torrent.title}
             </h3>
           </Link>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-            <span>Anonymous</span>
+          
+          {/* FIXED: Dynamic Client Display replaces "Anonymous" */}
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1 font-medium">
+            <div className="flex items-center gap-1.5 bg-secondary/30 px-2 py-0.5 rounded-md border border-white/5">
+              {client.icon}
+              <span>{client.name}</span>
+            </div>
           </div>
         </CardHeader>
 
