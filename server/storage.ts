@@ -37,11 +37,11 @@ export class DatabaseStorage implements IStorage {
 
     const conditions = [];
 
-    if (params?.search) {
+    if (params?.search && params.search !== 'undefined' && params.search !== '' && params.search !== 'null') {
       conditions.push(ilike(torrents.title, `%${params.search}%`));
     }
 
-    if (params?.category && params.category !== 'all') {
+    if (params?.category && params.category !== 'all' && params.category !== 'undefined' && params.category !== 'null') {
       conditions.push(eq(torrents.category, params.category));
     }
 
@@ -52,9 +52,12 @@ export class DatabaseStorage implements IStorage {
     // Default sort by newest
     if (!params?.sort || params.sort === 'newest') {
       query = query.orderBy(desc(torrents.createdAt)) as any;
-    } 
+    } else if (params.sort === 'oldest') {
+      query = query.orderBy(torrents.createdAt) as any;
+    }
 
-    return await query;
+    const results = await query;
+    return results;
   }
 
   async getTorrent(id: number): Promise<TorrentWithAuthor | undefined> {
