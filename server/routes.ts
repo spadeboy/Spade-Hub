@@ -144,16 +144,29 @@ export async function registerRoutes(
          return res.json({ message: "Database already seeded" });
       }
 
-      // We need a user to attribute these to.
-      // If no user exists, we can't seed properly with FK constraint.
-      // So we'll skip seeding if no user is found, or we could insert a dummy user?
-      // Since we use Replit Auth, we can't easily fake a user ID that corresponds to a real login.
-      // BUT, we can insert a dummy user into the 'users' table since we have access to it via drizzle.
+      // We'll attribute these to a system ID to ensure visibility
+      const adminId = "system-admin-id";
       
-      // Let's rely on manual creation for now to avoid FK issues with auth table
-      // Or we can just create a dummy user.
+      // Seed some data
+      await storage.createTorrent({
+        title: "Inception (2010)",
+        description: "A thief who steals corporate secrets through the use of dream-sharing technology is given the inverse task of planting an idea into the mind of a C.E.O.",
+        magnetLink: "magnet:?xt=urn:btih:EXAMPLE_HASH_1&dn=Inception",
+        imageUrl: "https://images.unsplash.com/photo-1536440136628-849c177e76a1",
+        category: "Movies",
+        createdById: adminId
+      });
+
+      await storage.createTorrent({
+        title: "Cyberpunk 2077",
+        description: "An open-world, action-adventure story set in Night City, a megalopolis obsessed with power, glamour and body modification.",
+        magnetLink: "magnet:?xt=urn:btih:EXAMPLE_HASH_2&dn=Cyberpunk2077",
+        imageUrl: "https://images.unsplash.com/photo-1542751371-adc38448a05e",
+        category: "Games",
+        createdById: adminId
+      });
       
-      res.json({ message: "Please create an account and post a torrent to seed!" });
+      res.json({ message: "Database seeded with example torrents!" });
       
     } catch (error) {
       console.error('Seed error:', error);

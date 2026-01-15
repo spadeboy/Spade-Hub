@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LogIn, LogOut, Menu, Waves } from "lucide-react";
+import { LogIn, LogOut, Menu, Spade } from "lucide-react";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated, logout } = useAuth();
@@ -19,7 +19,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group cursor-pointer">
             <div className="bg-primary/10 p-2 rounded-xl group-hover:bg-primary/20 transition-colors">
-              <Waves className="w-6 h-6 text-primary" />
+              <Spade className="w-6 h-6 text-primary" />
             </div>
             <span className="font-display text-xl font-bold tracking-tight">
               Spade<span className="text-primary"> Hub</span>
@@ -32,9 +32,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                     <Avatar className="h-10 w-10 border border-white/10">
-                      <AvatarImage src={user?.profileImageUrl || ""} alt={user?.username || ""} />
+                      <AvatarImage src={user?.profileImageUrl || ""} alt={user?.firstName || ""} />
                       <AvatarFallback className="bg-primary/20 text-primary">
-                        {user?.username?.[0]?.toUpperCase() || "U"}
+                        {user?.firstName?.[0]?.toUpperCase() || "U"}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
@@ -42,7 +42,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <DropdownMenuContent className="w-56 bg-card border-white/10" align="end" forceMount>
                   <div className="flex items-center justify-start gap-2 p-2">
                     <div className="flex flex-col space-y-1 leading-none">
-                      <p className="font-medium">{user?.username || "User"}</p>
+                      <p className="font-medium">{user?.firstName || "User"}</p>
                       <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
                     </div>
                   </div>
