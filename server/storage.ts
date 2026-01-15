@@ -41,7 +41,7 @@ export class DatabaseStorage implements IStorage {
       conditions.push(ilike(torrents.title, `%${params.search}%`));
     }
 
-    if (params?.category && params.category.toLowerCase() !== 'all') {
+    if (params?.category && params.category !== 'all') {
       conditions.push(eq(torrents.category, params.category));
     }
 

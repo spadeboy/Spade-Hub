@@ -27,6 +27,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </Link>
 
           <div className="flex items-center gap-4">
+            <nav className="hidden md:flex items-center gap-4 mr-4">
+              <Link href="/" className="text-sm font-medium hover:text-primary transition-colors">
+                Browse
+              </Link>
+              {user?.email === "ashiksa88@gmail.com" && (
+                <Link href="/my-uploads" className="text-sm font-medium hover:text-primary transition-colors">
+                  My Uploads
+                </Link>
+              )}
+            </nav>
             {isAuthenticated ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
