@@ -9,6 +9,8 @@ import { FaWindows, FaApple, FaAndroid } from "react-icons/fa";
 import { SiQbittorrent } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
+// Import auth to check login status
+import { auth } from "@/firebase";
 
 const categoryIcons: Record<string, any> = {
   Movies: Film,
@@ -22,17 +24,23 @@ export function TorrentCard({ torrent }: { torrent: TorrentWithAuthor }) {
   const Icon = categoryIcons[torrent.category] || Globe;
   const { toast } = useToast();
   
-  // States to track if item is saved
   const [isFavorited, setIsFavorited] = useState(false);
   const [isWatchLater, setIsWatchLater] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(!!auth.currentUser);
 
-  // Check saved status on load
   useEffect(() => {
+    // Listen for auth changes to update button visibility
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      setIsAuthenticated(!!user);
+    });
+
     const favorites = JSON.parse(localStorage.getItem("spade_favorites") || "[]");
     const watchLater = JSON.parse(localStorage.getItem("spade_watch_later") || "[]");
     
     setIsFavorited(favorites.some((item: any) => item.id === torrent.id));
     setIsWatchLater(watchLater.some((item: any) => item.id === torrent.id));
+
+    return () => unsubscribe();
   }, [torrent.id]);
 
   const getDeviceClient = () => {
@@ -61,21 +69,16 @@ export function TorrentCard({ torrent }: { torrent: TorrentWithAuthor }) {
 
     let updatedData;
     if (isAdded) {
-      // Remove it
       updatedData = existingData.filter((item: any) => item.id !== torrent.id);
       if (listType === "Favorites") setIsFavorited(false);
       else setIsWatchLater(false);
-      
       toast({ title: `Removed from ${listType}`, description: `"${torrent.title}" removed.` });
     } else {
-      // Add it
       updatedData = [...existingData, torrent];
       if (listType === "Favorites") setIsFavorited(true);
       else setIsWatchLater(true);
-
       toast({ title: `Added to ${listType}`, description: `"${torrent.title}" added!` });
     }
-    
     localStorage.setItem(storageKey, JSON.stringify(updatedData));
   };
 
@@ -95,25 +98,27 @@ export function TorrentCard({ torrent }: { torrent: TorrentWithAuthor }) {
             />
           )}
           
-          {/* Top Left Actions with Purple Indicators */}
-          <div className="absolute top-3 left-3 flex gap-2">
-            <button 
-              onClick={() => toggleAction("Favorites")}
-              className={`p-2 rounded-full backdrop-blur border border-white/10 transition-all shadow-lg ${
-                isFavorited ? "bg-primary/80 text-white" : "bg-background/60 text-white hover:text-red-500"
-              }`}
-            >
-              <Heart className={`w-4 h-4 ${isFavorited ? "fill-current" : ""}`} />
-            </button>
-            <button 
-              onClick={() => toggleAction("WatchLater")}
-              className={`p-2 rounded-full backdrop-blur border border-white/10 transition-all shadow-lg ${
-                isWatchLater ? "bg-primary/80 text-white" : "bg-background/60 text-white hover:text-primary"
-              }`}
-            >
-              {isWatchLater ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-            </button>
-          </div>
+          {/* ONLY SHOW ACTIONS IF LOGGED IN */}
+          {isAuthenticated && (
+            <div className="absolute top-3 left-3 flex gap-2">
+              <button 
+                onClick={() => toggleAction("Favorites")}
+                className={`p-2 rounded-full backdrop-blur border border-white/10 transition-all shadow-lg ${
+                  isFavorited ? "bg-primary/80 text-white" : "bg-background/60 text-white hover:text-red-500"
+                }`}
+              >
+                <Heart className={`w-4 h-4 ${isFavorited ? "fill-current" : ""}`} />
+              </button>
+              <button 
+                onClick={() => toggleAction("WatchLater")}
+                className={`p-2 rounded-full backdrop-blur border border-white/10 transition-all shadow-lg ${
+                  isWatchLater ? "bg-primary/80 text-white" : "bg-background/60 text-white hover:text-primary"
+                }`}
+              >
+                {isWatchLater ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+              </button>
+            </div>
+          )}
 
           <div className="absolute top-3 right-3">
             <Badge className="bg-background/80 backdrop-blur text-foreground border-white/10 shadow-sm">
