@@ -96,7 +96,12 @@ export function CreateTorrentModal() {
                   <FormItem>
                     <FormLabel>Cover Image URL (Optional)</FormLabel>
                     <FormControl>
-                      <Input placeholder="https://..." {...field} className="bg-background/50 border-white/10" />
+                      <Input 
+                        placeholder="https://..." 
+                        {...field} 
+                        value={field.value ?? ""} 
+                        className="bg-background/50 border-white/10" 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
