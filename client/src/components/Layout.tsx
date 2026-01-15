@@ -1,5 +1,4 @@
 import { Link } from "wouter";
-// import { useAuth } from "@/hooks/use-auth"; // We are replacing this with Firebase for now
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -8,7 +7,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LogIn, LogOut, Spade } from "lucide-react";
+import { LogIn, LogOut, Spade, Heart, Plus, ListVideo } from "lucide-react";
 
 // --- FIREBASE IMPORTS ---
 import { useEffect, useState } from "react";
@@ -16,14 +15,10 @@ import { auth, googleProvider } from "@/firebase";
 import { signInWithPopup, signOut, onAuthStateChanged } from "firebase/auth";
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  // const { user, isAuthenticated, logout } = useAuth(); // Old Replit Auth (Disabled)
-
-  // --- NEW FIREBASE LOGIC ---
   const [user, setUser] = useState<any>(null);
-  const isAuthenticated = !!user; // If user exists, we are authenticated
+  const isAuthenticated = !!user;
 
   useEffect(() => {
-    // Listen for login/logout changes automatically
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
     });
@@ -41,7 +36,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const handleLogout = async () => {
     await signOut(auth);
   };
-  // --------------------------
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
@@ -57,10 +51,23 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </Link>
 
           <div className="flex items-center gap-4">
-            <nav className="hidden md:flex items-center gap-4 mr-4">
-              {/* ADMIN CHECK: Only show if email matches */}
+            <nav className="hidden md:flex items-center gap-6">
+              {/* Favorites & Watch Later Links */}
+              {isAuthenticated && (
+                <>
+                  <Link href="/favorites" className="flex items-center gap-1.5 text-sm font-medium hover:text-red-500 transition-colors">
+                    <Heart className="w-4 h-4" />
+                    <span>Favorites</span>
+                  </Link>
+                  <Link href="/watch-later" className="flex items-center gap-1.5 text-sm font-medium hover:text-primary transition-colors">
+                    <Plus className="w-4 h-4" />
+                    <span>Watch Later</span>
+                  </Link>
+                </>
+              )}
+              
               {user?.email === "ashiksa88@gmail.com" && (
-                <Link href="/my-uploads" className="text-sm font-medium hover:text-primary transition-colors">
+                <Link href="/my-uploads" className="text-sm font-medium hover:text-primary transition-colors border-l border-white/10 pl-4">
                   My Uploads
                 </Link>
               )}
@@ -71,7 +78,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                     <Avatar className="h-10 w-10 border border-white/10">
-                      {/* Firebase uses 'photoURL', not 'profileImageUrl' */}
                       <AvatarImage src={user?.photoURL || ""} alt={user?.displayName || ""} />
                       <AvatarFallback className="bg-primary/20 text-primary">
                         {user?.email?.[0]?.toUpperCase() || "U"}
@@ -93,7 +99,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              // --- FIXED LOGIN BUTTON ---
               <Button 
                 onClick={handleGoogleLogin} 
                 variant="default" 
