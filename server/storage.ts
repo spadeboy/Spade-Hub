@@ -75,7 +75,7 @@ export class DatabaseStorage implements IStorage {
     return torrent;
   }
 
-  async createTorrent(insertTorrent: InsertTorrent): Promise<Torrent> {
+  async createTorrent(insertTorrent: InsertTorrent & { createdById: string }): Promise<Torrent> {
     const [torrent] = await db
       .insert(torrents)
       .values(insertTorrent)
