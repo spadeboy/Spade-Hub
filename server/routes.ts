@@ -1,11 +1,14 @@
 import type { Express } from "express";
-import { createServer, type Server } from "http";
+import type { Server } from "http";
 import { setupAuth } from "./replit_integrations/auth";
 import { registerAuthRoutes } from "./replit_integrations/auth";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
 import { isAuthenticated } from "./replit_integrations/auth";
+import { db } from "./db";
+import { users, torrents } from "@shared/schema";
+import { eq } from "drizzle-orm";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -167,7 +170,6 @@ export async function registerRoutes(
         title: "Inception (2010)",
         description: "A thief who steals corporate secrets through the use of dream-sharing technology is given the inverse task of planting an idea into the mind of a C.E.O.",
         magnetLink: "magnet:?xt=urn:btih:EXAMPLE_HASH_1&dn=Inception",
-        imageUrl: "https://images.unsplash.com/photo-1536440136628-849c177e76a1",
         category: "Movies",
         createdById: adminId
       });
@@ -176,7 +178,6 @@ export async function registerRoutes(
         title: "Cyberpunk 2077",
         description: "An open-world, action-adventure story set in Night City, a megalopolis obsessed with power, glamour and body modification.",
         magnetLink: "magnet:?xt=urn:btih:EXAMPLE_HASH_2&dn=Cyberpunk2077",
-        imageUrl: "https://images.unsplash.com/photo-1542751371-adc38448a05e",
         category: "Games",
         createdById: adminId
       });

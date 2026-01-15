@@ -22,7 +22,6 @@ export function CreateTorrentModal() {
       description: "",
       magnetLink: "",
       category: "Other",
-      imageUrl: "",
     },
   });
 
@@ -64,44 +63,28 @@ export function CreateTorrentModal() {
               )}
             />
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger className="bg-background/50 border-white/10">
-                          <SelectValue placeholder="Select Category" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {["Movies", "Games", "Music", "Software", "Other"].map((cat) => (
-                          <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="imageUrl"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Cover Image URL (Optional)</FormLabel>
+            <FormField
+              control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Category</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
-                      <Input placeholder="https://..." {...field} className="bg-background/50 border-white/10" />
+                      <SelectTrigger className="bg-background/50 border-white/10">
+                        <SelectValue placeholder="Select Category" />
+                      </SelectTrigger>
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+                    <SelectContent>
+                      {["Movies", "Games", "Music", "Software", "Other"].map((cat) => (
+                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}

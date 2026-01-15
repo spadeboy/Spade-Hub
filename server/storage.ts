@@ -29,7 +29,6 @@ export class DatabaseStorage implements IStorage {
       title: torrents.title,
       description: torrents.description,
       magnetLink: torrents.magnetLink,
-      imageUrl: torrents.imageUrl,
       category: torrents.category,
       createdById: torrents.createdById,
       createdAt: torrents.createdAt,
