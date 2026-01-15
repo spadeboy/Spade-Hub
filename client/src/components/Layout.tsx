@@ -22,7 +22,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <Waves className="w-6 h-6 text-primary" />
             </div>
             <span className="font-display text-xl font-bold tracking-tight">
-              Bit<span className="text-primary">Stream</span>
+              Spade<span className="text-primary"> Hub</span>
             </span>
           </Link>
 
@@ -70,7 +70,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       <footer className="border-t border-white/5 py-8 bg-black/20">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} BitStream. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Spade Hub. All rights reserved.</p>
         </div>
       </footer>
     </div>

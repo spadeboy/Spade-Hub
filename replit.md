@@ -1,8 +1,8 @@
-# BitStream - Torrent Sharing Platform
+# Spade Hub - Torrent Sharing Platform
 
 ## Overview
 
-BitStream is a torrent sharing platform where users can share and discover magnet links. The application allows authenticated users to create, view, and manage torrent entries with support for categorization, search, and filtering. The platform maintains uploader anonymity by not exposing author information in the public interface.
+Spade Hub is a torrent sharing platform where users can share and discover magnet links. The application allows the site owner (ashiksa88@gmail.com) to create, view, and manage torrent entries with support for categorization, search, and filtering. The platform maintains uploader anonymity by not exposing author information in the public interface.
 
 ## User Preferences
 

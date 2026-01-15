@@ -52,9 +52,9 @@ export async function registerRoutes(
   // Create torrent (Protected - Admin Only)
   app.post(api.torrents.create.path, isAuthenticated, async (req, res) => {
     try {
-      // Check if user is admin (owner of the repl)
+      // Check if user is admin (specific email)
       const user = req.user as any;
-      if (user.claims.sub !== process.env.REPL_OWNER_ID && process.env.NODE_ENV === 'production') {
+      if (user.claims.email !== "ashiksa88@gmail.com") {
         return res.status(403).json({ message: "Only the site owner can upload torrents" });
       }
 

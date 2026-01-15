@@ -12,7 +12,7 @@ import { motion } from "framer-motion";
 
 export default function Home() {
   const { user } = useAuth();
-  const isAdmin = user?.id === import.meta.env.VITE_REPL_OWNER_ID;
+  const isAdmin = user?.email === "ashiksa88@gmail.com";
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string>("all");
   const [sort, setSort] = useState<"newest" | "oldest">("newest");
@@ -32,8 +32,8 @@ export default function Home() {
         
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
           <div className="space-y-2">
-            <h1 className="text-4xl md:text-5xl font-display font-bold">
-              Discover <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-400">Content</span>
+            <h1 className="text-4xl md:text-5xl font-display font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-400">
+              Smoke it
             </h1>
             <p className="text-muted-foreground text-lg max-w-xl">
               The premier destination for sharing and discovering magnet links safely and securely.
