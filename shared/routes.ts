@@ -21,6 +21,15 @@ export const errorSchemas = {
 };
 
 // ============================================
+// QUERY SCHEMA (Extracted so we can export the type)
+// ============================================
+export const torrentsQuerySchema = z.object({
+  search: z.string().optional(),
+  category: z.string().optional(),
+  sort: z.enum(['newest', 'oldest']).optional(),
+});
+
+// ============================================
 // API CONTRACT
 // ============================================
 export const api = {
@@ -28,11 +37,8 @@ export const api = {
     list: {
       method: 'GET' as const,
       path: '/api/torrents',
-      input: z.object({
-        search: z.string().optional(),
-        category: z.string().optional(),
-        sort: z.enum(['newest', 'oldest']).optional(),
-      }).optional(),
+      // We use the schema defined above
+      input: torrentsQuerySchema.optional(),
       responses: {
         200: z.array(z.custom<typeof torrents.$inferSelect>()),
       },
@@ -99,3 +105,7 @@ export function buildUrl(path: string, params?: Record<string, string | number>)
 export type TorrentInput = z.infer<typeof api.torrents.create.input>;
 export type TorrentResponse = z.infer<typeof api.torrents.create.responses[201]>;
 export type TorrentUpdateInput = z.infer<typeof api.torrents.update.input>;
+
+// --- THIS IS THE FIX ---
+// We explicitly export this type so use-torrents.ts stops complaining
+export type TorrentsQueryParams = z.infer<typeof torrentsQuerySchema>;
