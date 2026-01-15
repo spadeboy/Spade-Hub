@@ -90,10 +90,10 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Torrent not found" });
       }
 
-      // Check ownership
+      // Check ownership or admin status
       const user = req.user as any;
       if (existing.createdById !== user.claims.sub && user.claims.email !== "ashiksa88@gmail.com") {
-        return res.status(403).json({ message: "You can only edit your own torrents" });
+        return res.status(403).json({ message: "Only the site owner or the uploader can edit this torrent" });
       }
 
       const input = api.torrents.update.input.parse(req.body);
@@ -121,10 +121,10 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Torrent not found" });
       }
 
-      // Check ownership
+      // Check ownership or admin status
       const user = req.user as any;
       if (existing.createdById !== user.claims.sub && user.claims.email !== "ashiksa88@gmail.com") {
-        return res.status(403).json({ message: "You can only delete your own torrents" });
+        return res.status(403).json({ message: "Only the site owner or the uploader can delete this torrent" });
       }
 
       await storage.deleteTorrent(id);
