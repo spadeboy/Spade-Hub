@@ -91,7 +91,7 @@ export async function registerRoutes(
 
       // Check ownership
       const user = req.user as any;
-      if (existing.createdById !== user.claims.sub) {
+      if (existing.createdById !== user.claims.sub && user.claims.email !== "ashiksa88@gmail.com") {
         return res.status(403).json({ message: "You can only edit your own torrents" });
       }
 
@@ -122,7 +122,7 @@ export async function registerRoutes(
 
       // Check ownership
       const user = req.user as any;
-      if (existing.createdById !== user.claims.sub) {
+      if (existing.createdById !== user.claims.sub && user.claims.email !== "ashiksa88@gmail.com") {
         return res.status(403).json({ message: "You can only delete your own torrents" });
       }
 
@@ -144,8 +144,23 @@ export async function registerRoutes(
          return res.json({ message: "Database already seeded" });
       }
 
-      // We'll attribute these to a system ID to ensure visibility
-      const adminId = "system-admin-id";
+      // We'll attribute these to the admin user
+      const adminEmail = "ashiksa88@gmail.com";
+      const usersList = await db.select().from(users).where(eq(users.email, adminEmail));
+      
+      let adminId: string;
+      if (usersList.length === 0) {
+        // If user not found, create a placeholder so seeds are visible
+        // The user will naturally take over this data when they log in
+        adminId = "placeholder-admin-id";
+        await db.insert(users).values({
+          id: adminId,
+          email: adminEmail,
+          firstName: "Spade",
+        });
+      } else {
+        adminId = usersList[0].id;
+      }
       
       // Seed some data
       await storage.createTorrent({
