@@ -11,7 +11,8 @@ import { Search, SlidersHorizontal, Loader2, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function Home() {
-  const { isAuthenticated } = useAuth();
+  const { user } = useAuth();
+  const isAdmin = user?.id === import.meta.env.VITE_REPL_OWNER_ID;
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string>("all");
   const [sort, setSort] = useState<"newest" | "oldest">("newest");
@@ -39,7 +40,7 @@ export default function Home() {
             </p>
           </div>
           
-          {isAuthenticated && <CreateTorrentModal />}
+          {isAdmin && <CreateTorrentModal />}
         </div>
 
         {/* Filters Bar */}
@@ -107,7 +108,7 @@ export default function Home() {
             <p className="text-muted-foreground max-w-md mb-6">
               We couldn't find anything matching your criteria. Try adjusting your filters or share something new!
             </p>
-            {isAuthenticated && (
+            {isAdmin && (
               <div className="opacity-50 pointer-events-none">
                 {/* Visual cue only, modal trigger is in header */}
                 <Button variant="outline">Share your first torrent</Button>
