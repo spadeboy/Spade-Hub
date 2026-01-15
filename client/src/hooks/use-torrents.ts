@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api, buildUrl, type TorrentInput, type TorrentsQueryParams } from "@shared/routes";
+import { api, buildUrl, type TorrentInput } from "@shared/routes";
+import { type TorrentsQueryParams } from "@shared/schema"; 
 import { useToast } from "@/hooks/use-toast";
 
 export function useTorrents(params?: TorrentsQueryParams) {
@@ -53,17 +54,37 @@ export function useCreateTorrent() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.torrents.list.path] });
-      toast({
-        title: "Success",
-        description: "Torrent shared successfully!",
-      });
+      toast({ title: "Success", description: "Torrent shared successfully!" });
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+}
+
+export function useUpdateTorrent(id: number) {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (data: Partial<TorrentInput>) => {
+      const res = await fetch(`/api/torrents/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "include",
       });
+
+      if (!res.ok) throw new Error("Failed to update torrent");
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.torrents.list.path] });
+      queryClient.invalidateQueries({ queryKey: [api.torrents.get.path, id] });
+      toast({ title: "Updated", description: "Torrent details saved." });
+    },
+    onError: (error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
 }
@@ -75,26 +96,15 @@ export function useDeleteTorrent() {
   return useMutation({
     mutationFn: async (id: number) => {
       const url = buildUrl(api.torrents.delete.path, { id });
-      const res = await fetch(url, { 
-        method: api.torrents.delete.method, 
-        credentials: "include" 
-      });
-
+      const res = await fetch(url, { method: api.torrents.delete.method, credentials: "include" });
       if (!res.ok) throw new Error("Failed to delete torrent");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.torrents.list.path] });
-      toast({
-        title: "Deleted",
-        description: "Torrent has been removed.",
-      });
+      toast({ title: "Deleted", description: "Torrent removed." });
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
 }

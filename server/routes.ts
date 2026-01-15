@@ -15,16 +15,15 @@ export async function registerRoutes(
 ): Promise<Server> {
 
   // --- FIX: AUTO-CREATE ADMIN USER ---
-  // The database requires the ID to be a STRING (Text).
   try {
     const adminUser = await db.query.users.findFirst({
-      where: eq(users.id, "1"), // <--- FIXED: "1" (String)
+      where: eq(users.id, "1"), 
     });
 
     if (!adminUser) {
       console.log("⚠️ Admin User not found. Creating him now...");
       await db.insert(users).values({
-        id: "1", // <--- FIXED: "1" (String)
+        id: "1",
         email: "ashiksa88@gmail.com",
         username: "ashiksa88",
         displayName: "Spade Admin",
@@ -34,7 +33,6 @@ export async function registerRoutes(
   } catch (error) {
     console.error("Error creating admin user:", error);
   }
-  // -----------------------------------
 
   // --- FORCE ADMIN LOGIN MIDDLEWARE ---
   app.use((req, res, next) => {
@@ -42,7 +40,7 @@ export async function registerRoutes(
     req.isAuthenticated = () => true; 
     // @ts-ignore
     req.user = {
-      id: "1", // <--- FIXED: "1" (String)
+      id: "1", 
       username: "ashiksa88",
       displayName: "Spade Admin",
       email: "ashiksa88@gmail.com"
@@ -50,6 +48,7 @@ export async function registerRoutes(
     next();
   });
 
+  registerAuthRoutes(app);
   registerObjectStorageRoutes(app);
 
   // === TORRENTS API ===
@@ -63,7 +62,6 @@ export async function registerRoutes(
         category: category as string,
         sort: sort as 'newest' | 'oldest'
       };
-      
       const torrents = await storage.getTorrents(params);
       res.json(torrents);
     } catch (error) {
@@ -89,6 +87,7 @@ export async function registerRoutes(
   // Create torrent
   app.post(api.torrents.create.path, async (req, res) => {
     try {
+      // FIX: Cast req to any to access .user safely
       const user = (req as any).user;
       
       if (user.email !== "ashiksa88@gmail.com") {
@@ -99,7 +98,7 @@ export async function registerRoutes(
       
       const torrent = await storage.createTorrent({
         ...input,
-        createdById: user.id // This is now "1" (String)
+        createdById: user.id
       });
       res.status(201).json(torrent);
     } catch (err) {
@@ -124,6 +123,7 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Torrent not found" });
       }
 
+      // FIX: Cast req to any
       const user = (req as any).user;
       if (user.email !== "ashiksa88@gmail.com") {
         return res.status(403).json({ message: "Only ashiksa88@gmail.com can edit torrents" });
@@ -154,6 +154,7 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Torrent not found" });
       }
 
+      // FIX: Cast req to any
       const user = (req as any).user;
       if (user.email !== "ashiksa88@gmail.com") {
         return res.status(403).json({ message: "Only ashiksa88@gmail.com can delete torrents" });
