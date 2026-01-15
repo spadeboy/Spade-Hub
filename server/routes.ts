@@ -6,6 +6,7 @@ import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
 import { isAuthenticated } from "./replit_integrations/auth";
+import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import { db } from "./db";
 import { users, torrents } from "@shared/schema";
 import { eq } from "drizzle-orm";
@@ -17,6 +18,9 @@ export async function registerRoutes(
   // Set up Replit Auth
   await setupAuth(app);
   registerAuthRoutes(app);
+  
+  // Register Object Storage Routes
+  registerObjectStorageRoutes(app);
 
   // === TORRENTS API ===
 
@@ -55,10 +59,9 @@ export async function registerRoutes(
   // Create torrent (Protected - Admin Only)
   app.post(api.torrents.create.path, isAuthenticated, async (req, res) => {
     try {
-      // Check if user is admin (specific email)
       const user = req.user as any;
       if (user.claims.email !== "ashiksa88@gmail.com") {
-        return res.status(403).json({ message: "Only the site owner can upload torrents" });
+        return res.status(403).json({ message: "Only ashiksa88@gmail.com can upload torrents" });
       }
 
       const input = api.torrents.create.input.parse(req.body);
@@ -90,10 +93,10 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Torrent not found" });
       }
 
-      // Check ownership or admin status
+      // Check admin status
       const user = req.user as any;
-      if (existing.createdById !== user.claims.sub && user.claims.email !== "ashiksa88@gmail.com") {
-        return res.status(403).json({ message: "Only the site owner or the uploader can edit this torrent" });
+      if (user.claims.email !== "ashiksa88@gmail.com") {
+        return res.status(403).json({ message: "Only ashiksa88@gmail.com can edit torrents" });
       }
 
       const input = api.torrents.update.input.parse(req.body);
@@ -121,10 +124,10 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Torrent not found" });
       }
 
-      // Check ownership or admin status
+      // Check admin status
       const user = req.user as any;
-      if (existing.createdById !== user.claims.sub && user.claims.email !== "ashiksa88@gmail.com") {
-        return res.status(403).json({ message: "Only the site owner or the uploader can delete this torrent" });
+      if (user.claims.email !== "ashiksa88@gmail.com") {
+        return res.status(403).json({ message: "Only ashiksa88@gmail.com can delete torrents" });
       }
 
       await storage.deleteTorrent(id);

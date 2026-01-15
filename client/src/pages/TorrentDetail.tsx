@@ -85,7 +85,7 @@ export default function TorrentDetail() {
             <div className="rounded-2xl overflow-hidden bg-muted aspect-[3/4] shadow-2xl relative group">
               {torrent.imageUrl ? (
                 <img 
-                  src={torrent.imageUrl} 
+                  src={torrent.imageUrl.startsWith("/objects/") ? torrent.imageUrl : torrent.imageUrl} 
                   alt={torrent.title} 
                   className="w-full h-full object-cover"
                 />

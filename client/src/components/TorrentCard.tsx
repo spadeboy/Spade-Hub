@@ -27,7 +27,7 @@ export function TorrentCard({ torrent }: { torrent: TorrentWithAuthor }) {
         <div className="relative h-48 overflow-hidden bg-muted/50">
           {torrent.imageUrl ? (
             <img 
-              src={torrent.imageUrl} 
+              src={torrent.imageUrl.startsWith("/objects/") ? torrent.imageUrl : torrent.imageUrl} 
               alt={torrent.title} 
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             />

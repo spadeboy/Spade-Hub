@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Loader2, Plus, Upload } from "lucide-react";
+import { Loader2, Plus, Upload, Image as ImageIcon } from "lucide-react";
+import { ObjectUploader } from "./ObjectUploader";
 
 export function CreateTorrentModal() {
   const [open, setOpen] = useState(false);
@@ -26,6 +27,14 @@ export function CreateTorrentModal() {
       imageUrl: "",
     },
   });
+
+  const handleImageUpload = (result: any) => {
+    if (result.successful && result.successful.length > 0) {
+      const file = result.successful[0];
+      const objectPath = file.response.body.objectPath;
+      form.setValue("imageUrl", objectPath);
+    }
+  };
 
   const onSubmit = (data: InsertTorrent) => {
     createTorrent.mutate(data, {
@@ -94,14 +103,38 @@ export function CreateTorrentModal() {
                 name="imageUrl"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Cover Image URL (Optional)</FormLabel>
+                    <FormLabel>Cover Image</FormLabel>
                     <FormControl>
-                      <Input 
-                        placeholder="https://..." 
-                        {...field} 
-                        value={field.value ?? ""} 
-                        className="bg-background/50 border-white/10" 
-                      />
+                      <div className="flex gap-2">
+                        <Input 
+                          placeholder="https://... or upload" 
+                          {...field} 
+                          value={field.value ?? ""} 
+                          className="bg-background/50 border-white/10 flex-1" 
+                        />
+                        <ObjectUploader
+                          onGetUploadParameters={async (file) => {
+                            const res = await fetch("/api/uploads/request-url", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                name: file.name,
+                                size: file.size,
+                                contentType: file.type,
+                              }),
+                            });
+                            const data = await res.json();
+                            return {
+                              method: "PUT",
+                              url: data.uploadURL,
+                              headers: { "Content-Type": file.type || "application/octet-stream" },
+                            };
+                          }}
+                          onComplete={handleImageUpload}
+                        >
+                          <Upload className="w-4 h-4" />
+                        </ObjectUploader>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
