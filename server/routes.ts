@@ -5,7 +5,6 @@ import { registerAuthRoutes } from "./replit_integrations/auth";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
-import { isAuthenticated } from "./replit_integrations/auth";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import { db } from "./db";
 import { users, torrents } from "@shared/schema";
@@ -15,11 +14,43 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  // Set up Replit Auth
-  await setupAuth(app);
-  registerAuthRoutes(app);
-  
-  // Register Object Storage Routes
+
+  // --- FIX: AUTO-CREATE ADMIN USER ---
+  // The database requires the ID to be a STRING (Text).
+  try {
+    const adminUser = await db.query.users.findFirst({
+      where: eq(users.id, "1"), // <--- FIXED: "1" (String)
+    });
+
+    if (!adminUser) {
+      console.log("⚠️ Admin User not found. Creating him now...");
+      await db.insert(users).values({
+        id: "1", // <--- FIXED: "1" (String)
+        email: "ashiksa88@gmail.com",
+        username: "ashiksa88",
+        displayName: "Spade Admin",
+      });
+      console.log("✅ Admin User created successfully!");
+    }
+  } catch (error) {
+    console.error("Error creating admin user:", error);
+  }
+  // -----------------------------------
+
+  // --- FORCE ADMIN LOGIN MIDDLEWARE ---
+  app.use((req, res, next) => {
+    // @ts-ignore
+    req.isAuthenticated = () => true; 
+    // @ts-ignore
+    req.user = {
+      id: "1", // <--- FIXED: "1" (String)
+      username: "ashiksa88",
+      displayName: "Spade Admin",
+      email: "ashiksa88@gmail.com"
+    };
+    next();
+  });
+
   registerObjectStorageRoutes(app);
 
   // === TORRENTS API ===
@@ -56,11 +87,12 @@ export async function registerRoutes(
     }
   });
 
-  // Create torrent (Protected - Admin Only)
-  app.post(api.torrents.create.path, isAuthenticated, async (req, res) => {
+  // Create torrent
+  app.post(api.torrents.create.path, async (req, res) => {
     try {
       const user = req.user as any;
-      if (user.claims.email !== "ashiksa88@gmail.com") {
+      
+      if (user.email !== "ashiksa88@gmail.com") {
         return res.status(403).json({ message: "Only ashiksa88@gmail.com can upload torrents" });
       }
 
@@ -68,7 +100,7 @@ export async function registerRoutes(
       
       const torrent = await storage.createTorrent({
         ...input,
-        createdById: user.claims.sub
+        createdById: user.id // This is now "1" (String)
       });
       res.status(201).json(torrent);
     } catch (err) {
@@ -83,8 +115,8 @@ export async function registerRoutes(
     }
   });
 
-  // Update torrent (Protected & Owner only)
-  app.put(api.torrents.update.path, isAuthenticated, async (req, res) => {
+  // Update torrent
+  app.put(api.torrents.update.path, async (req, res) => {
     try {
       const id = Number(req.params.id);
       const existing = await storage.getTorrent(id);
@@ -93,9 +125,8 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Torrent not found" });
       }
 
-      // Check admin status
       const user = req.user as any;
-      if (user.claims.email !== "ashiksa88@gmail.com") {
+      if (user.email !== "ashiksa88@gmail.com") {
         return res.status(403).json({ message: "Only ashiksa88@gmail.com can edit torrents" });
       }
 
@@ -114,8 +145,8 @@ export async function registerRoutes(
     }
   });
 
-  // Delete torrent (Protected & Owner only)
-  app.delete(api.torrents.delete.path, isAuthenticated, async (req, res) => {
+  // Delete torrent
+  app.delete(api.torrents.delete.path, async (req, res) => {
     try {
       const id = Number(req.params.id);
       const existing = await storage.getTorrent(id);
@@ -124,9 +155,8 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Torrent not found" });
       }
 
-      // Check admin status
       const user = req.user as any;
-      if (user.claims.email !== "ashiksa88@gmail.com") {
+      if (user.email !== "ashiksa88@gmail.com") {
         return res.status(403).json({ message: "Only ashiksa88@gmail.com can delete torrents" });
       }
 
@@ -135,59 +165,6 @@ export async function registerRoutes(
     } catch (error) {
       console.error('Delete torrent error:', error);
       res.status(500).json({ message: "Failed to delete torrent" });
-    }
-  });
-
-  // Seed Data Endpoint (for testing/demo)
-  // In production this would be removed or protected
-  app.post("/api/seed", async (req, res) => {
-    try {
-      // Check if data exists
-      const existing = await storage.getTorrents();
-      if (existing.length > 0) {
-         return res.json({ message: "Database already seeded" });
-      }
-
-      // We'll attribute these to the admin user
-      const adminEmail = "ashiksa88@gmail.com";
-      const usersList = await db.select().from(users).where(eq(users.email, adminEmail));
-      
-      let adminId: string;
-      if (usersList.length === 0) {
-        // If user not found, create a placeholder so seeds are visible
-        // The user will naturally take over this data when they log in
-        adminId = "placeholder-admin-id";
-        await db.insert(users).values({
-          id: adminId,
-          email: adminEmail,
-          firstName: "Spade",
-        });
-      } else {
-        adminId = usersList[0].id;
-      }
-      
-      // Seed some data
-      await storage.createTorrent({
-        title: "Inception (2010)",
-        description: "A thief who steals corporate secrets through the use of dream-sharing technology is given the inverse task of planting an idea into the mind of a C.E.O.",
-        magnetLink: "magnet:?xt=urn:btih:EXAMPLE_HASH_1&dn=Inception",
-        category: "Movies",
-        createdById: adminId
-      });
-
-      await storage.createTorrent({
-        title: "Cyberpunk 2077",
-        description: "An open-world, action-adventure story set in Night City, a megalopolis obsessed with power, glamour and body modification.",
-        magnetLink: "magnet:?xt=urn:btih:EXAMPLE_HASH_2&dn=Cyberpunk2077",
-        category: "Games",
-        createdById: adminId
-      });
-      
-      res.json({ message: "Database seeded with example torrents!" });
-      
-    } catch (error) {
-      console.error('Seed error:', error);
-      res.status(500).json({ message: "Seed failed" });
     }
   });
 

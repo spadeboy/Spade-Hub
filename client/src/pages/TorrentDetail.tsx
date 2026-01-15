@@ -1,6 +1,7 @@
+import { useState, useEffect } from "react";
 import { useRoute, Link } from "wouter";
 import { useTorrent, useDeleteTorrent } from "@/hooks/use-torrents";
-import { useAuth } from "@/hooks/use-auth";
+// import { useAuth } from "@/hooks/use-auth"; // REMOVED: Old Replit Auth
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +10,6 @@ import {
   Download, 
   ArrowLeft, 
   Calendar, 
-  User, 
   Trash2, 
   Share2, 
   ShieldCheck 
@@ -27,16 +27,32 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
+// --- FIREBASE IMPORTS ---
+import { auth } from "@/firebase";
+import { onAuthStateChanged } from "firebase/auth";
+
 export default function TorrentDetail() {
   const [, params] = useRoute("/torrents/:id");
   const id = parseInt(params?.id || "0");
   
   const { data: torrent, isLoading, error } = useTorrent(id);
-  const { user } = useAuth();
   const deleteTorrent = useDeleteTorrent();
   
-  const isAdmin = user?.email === "ashiksa88@gmail.com";
-  const isOwner = (user && torrent && user.id === torrent.createdById) || isAdmin;
+  // --- NEW FIREBASE ADMIN CHECK ---
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      // Check if the logged-in email matches yours
+      if (user && user.email === "ashiksa88@gmail.com") {
+        setIsAdmin(true);
+      } else {
+        setIsAdmin(false);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+  // -------------------------------
 
   if (isLoading) {
     return (
@@ -127,7 +143,9 @@ export default function TorrentDetail() {
                 <h1 className="text-4xl md:text-5xl font-display font-bold text-glow leading-tight mb-4">
                   {torrent.title}
                 </h1>
-                {isOwner && (
+                
+                {/* DELETE BUTTON - Only visible to Admin (Ashik) */}
+                {isAdmin && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button variant="destructive" size="icon" className="shrink-0">
@@ -170,7 +188,6 @@ export default function TorrentDetail() {
               </div>
             </div>
             
-            {/* Technical Details placeholder - could be expanded if schema had file size, seeders etc */}
             <div className="bg-card border border-white/5 rounded-2xl p-6">
               <h3 className="text-lg font-bold mb-4 font-display">Technical Specs</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -185,7 +202,6 @@ export default function TorrentDetail() {
                  <div>
                   <span className="text-xs text-muted-foreground block mb-1">Hash</span>
                   <span className="font-mono text-foreground truncate block w-24">
-                    {/* Fake hash derived from ID just for visuals */}
                     {Math.random().toString(16).substring(2, 10).toUpperCase()}
                   </span>
                 </div>

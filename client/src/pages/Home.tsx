@@ -1,23 +1,34 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTorrents } from "@/hooks/use-torrents";
-import { useAuth } from "@/hooks/use-auth";
 import { Layout } from "@/components/Layout";
 import { TorrentCard } from "@/components/TorrentCard";
 import { CreateTorrentModal } from "@/components/CreateTorrentModal";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, SlidersHorizontal, Loader2, AlertCircle } from "lucide-react";
-import { motion } from "framer-motion";
+import { Search, SlidersHorizontal, Loader2, AlertCircle, SearchX } from "lucide-react";
+
+// --- FIREBASE IMPORTS ---
+import { auth } from "@/firebase";
+import { onAuthStateChanged } from "firebase/auth";
 
 export default function Home() {
-  const { user } = useAuth();
-  const isAdmin = user?.email === "ashiksa88@gmail.com";
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user && user.email === "ashiksa88@gmail.com") {
+        setIsAdmin(true);
+      } else {
+        setIsAdmin(false);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string>("all");
   const [sort, setSort] = useState<"newest" | "oldest">("newest");
   
-  // Debounce search could be added here for optimization
   const { data: torrents, isLoading, error } = useTorrents({
     search: search || undefined,
     category: category !== "all" ? category : undefined,
@@ -40,6 +51,7 @@ export default function Home() {
             </p>
           </div>
           
+          {/* HEADER BUTTON - Fixed: Self-closing tag */}
           {isAdmin && <CreateTorrentModal />}
         </div>
 
@@ -102,18 +114,15 @@ export default function Home() {
         ) : torrents?.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-white/10 rounded-3xl bg-card/10">
             <div className="bg-muted/30 p-4 rounded-full mb-4">
-              <Search className="w-8 h-8 text-muted-foreground" />
+              <SearchX className="w-8 h-8 text-muted-foreground" />
             </div>
             <h3 className="text-xl font-bold mb-2">No torrents found</h3>
             <p className="text-muted-foreground max-w-md mb-6">
               We couldn't find anything matching your criteria. Try adjusting your filters or share something new!
             </p>
-            {isAdmin && (
-              <div className="opacity-50 pointer-events-none">
-                {/* Visual cue only, modal trigger is in header */}
-                <Button variant="outline">Share your first torrent</Button>
-              </div>
-            )}
+            
+            {/* EMPTY STATE BUTTON - Fixed: Self-closing tag */}
+            {isAdmin && <CreateTorrentModal />}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

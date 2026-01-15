@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { useAuth } from "@/hooks/use-auth";
+// import { useAuth } from "@/hooks/use-auth"; // We are replacing this with Firebase for now
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -8,10 +8,40 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LogIn, LogOut, Menu, Spade } from "lucide-react";
+import { LogIn, LogOut, Spade } from "lucide-react";
+
+// --- FIREBASE IMPORTS ---
+import { useEffect, useState } from "react";
+import { auth, googleProvider } from "@/firebase";
+import { signInWithPopup, signOut, onAuthStateChanged } from "firebase/auth";
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const { user, isAuthenticated, logout } = useAuth();
+  // const { user, isAuthenticated, logout } = useAuth(); // Old Replit Auth (Disabled)
+
+  // --- NEW FIREBASE LOGIC ---
+  const [user, setUser] = useState<any>(null);
+  const isAuthenticated = !!user; // If user exists, we are authenticated
+
+  useEffect(() => {
+    // Listen for login/logout changes automatically
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleGoogleLogin = async () => {
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (error) {
+      console.error("Login failed", error);
+    }
+  };
+
+  const handleLogout = async () => {
+    await signOut(auth);
+  };
+  // --------------------------
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
@@ -28,23 +58,23 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
           <div className="flex items-center gap-4">
             <nav className="hidden md:flex items-center gap-4 mr-4">
-              <Link href="/" className="text-sm font-medium hover:text-primary transition-colors">
-                Browse
-              </Link>
+              {/* ADMIN CHECK: Only show if email matches */}
               {user?.email === "ashiksa88@gmail.com" && (
                 <Link href="/my-uploads" className="text-sm font-medium hover:text-primary transition-colors">
                   My Uploads
                 </Link>
               )}
             </nav>
+
             {isAuthenticated ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                     <Avatar className="h-10 w-10 border border-white/10">
-                      <AvatarImage src={user?.profileImageUrl || ""} alt={user?.firstName || ""} />
+                      {/* Firebase uses 'photoURL', not 'profileImageUrl' */}
+                      <AvatarImage src={user?.photoURL || ""} alt={user?.displayName || ""} />
                       <AvatarFallback className="bg-primary/20 text-primary">
-                        {user?.firstName?.[0]?.toUpperCase() || "U"}
+                        {user?.email?.[0]?.toUpperCase() || "U"}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
@@ -52,22 +82,25 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <DropdownMenuContent className="w-56 bg-card border-white/10" align="end" forceMount>
                   <div className="flex items-center justify-start gap-2 p-2">
                     <div className="flex flex-col space-y-1 leading-none">
-                      <p className="font-medium">{user?.firstName || "User"}</p>
+                      <p className="font-medium">{user?.displayName || "User"}</p>
                       <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
                     </div>
                   </div>
-                  <DropdownMenuItem onClick={() => logout()} className="text-destructive focus:text-destructive cursor-pointer">
+                  <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive cursor-pointer">
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Log out</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Button asChild variant="default" className="bg-primary hover:bg-primary/90 font-semibold shadow-lg shadow-primary/20">
-                <a href="/api/login">
-                  <LogIn className="w-4 h-4 mr-2" />
-                  Login with Replit
-                </a>
+              // --- FIXED LOGIN BUTTON ---
+              <Button 
+                onClick={handleGoogleLogin} 
+                variant="default" 
+                className="bg-primary hover:bg-primary/90 font-semibold shadow-lg shadow-primary/20"
+              >
+                <LogIn className="w-4 h-4 mr-2" />
+                Sign In
               </Button>
             )}
           </div>
