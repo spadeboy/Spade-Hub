@@ -33,15 +33,8 @@ export class DatabaseStorage implements IStorage {
       category: torrents.category,
       createdById: torrents.createdById,
       createdAt: torrents.createdAt,
-      author: {
-        username: users.email, // Using email as username/display since we don't enforce unique username in auth schema yet or it's email based
-        firstName: users.firstName,
-        lastName: users.lastName,
-        profileImageUrl: users.profileImageUrl,
-      }
     })
-    .from(torrents)
-    .leftJoin(users, eq(torrents.createdById, users.id));
+    .from(torrents);
 
     const conditions = [];
 
@@ -61,7 +54,6 @@ export class DatabaseStorage implements IStorage {
     if (!params?.sort || params.sort === 'newest') {
       query = query.orderBy(desc(torrents.createdAt)) as any;
     } 
-    // Add other sorts if needed
 
     return await query;
   }
@@ -76,15 +68,8 @@ export class DatabaseStorage implements IStorage {
       category: torrents.category,
       createdById: torrents.createdById,
       createdAt: torrents.createdAt,
-      author: {
-        username: users.email,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        profileImageUrl: users.profileImageUrl,
-      }
     })
     .from(torrents)
-    .leftJoin(users, eq(torrents.createdById, users.id))
     .where(eq(torrents.id, id));
     
     return torrent;
@@ -121,15 +106,8 @@ export class DatabaseStorage implements IStorage {
       category: torrents.category,
       createdById: torrents.createdById,
       createdAt: torrents.createdAt,
-      author: {
-        username: users.email,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        profileImageUrl: users.profileImageUrl,
-      }
     })
     .from(torrents)
-    .leftJoin(users, eq(torrents.createdById, users.id))
     .where(eq(torrents.createdById, userId))
     .orderBy(desc(torrents.createdAt));
   }

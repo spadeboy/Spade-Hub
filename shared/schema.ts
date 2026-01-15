@@ -46,15 +46,8 @@ export type CreateTorrentRequest = InsertTorrent;
 export type UpdateTorrentRequest = Partial<InsertTorrent>;
 
 // Response types
-// We often want to include the author info in the list
-export type TorrentWithAuthor = Torrent & {
-  author?: {
-    username: string | null; // users table has firstName/lastName/email, but we might just use first name or email as display
-    firstName: string | null;
-    lastName: string | null;
-    profileImageUrl: string | null;
-  }
-};
+// No author info included to maintain uploader anonymity
+export type TorrentWithAuthor = Torrent;
 
 export type TorrentsListResponse = TorrentWithAuthor[];
 

@@ -49,13 +49,17 @@ export async function registerRoutes(
     }
   });
 
-  // Create torrent (Protected)
+  // Create torrent (Protected - Admin Only)
   app.post(api.torrents.create.path, isAuthenticated, async (req, res) => {
     try {
+      // Check if user is admin (owner of the repl)
+      const user = req.user as any;
+      if (user.claims.sub !== process.env.REPL_OWNER_ID && process.env.NODE_ENV === 'production') {
+        return res.status(403).json({ message: "Only the site owner can upload torrents" });
+      }
+
       const input = api.torrents.create.input.parse(req.body);
       
-      // Add current user as creator
-      const user = req.user as any;
       const torrentData = {
         ...input,
         createdById: user.claims.sub
