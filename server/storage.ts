@@ -41,7 +41,7 @@ export class DatabaseStorage implements IStorage {
       conditions.push(ilike(torrents.title, `%${params.search}%`));
     }
 
-    if (params?.category && params.category !== 'All') {
+    if (params?.category && params.category.toLowerCase() !== 'all') {
       conditions.push(eq(torrents.category, params.category));
     }
 
@@ -63,7 +63,6 @@ export class DatabaseStorage implements IStorage {
       title: torrents.title,
       description: torrents.description,
       magnetLink: torrents.magnetLink,
-      imageUrl: torrents.imageUrl,
       category: torrents.category,
       createdById: torrents.createdById,
       createdAt: torrents.createdAt,
@@ -101,7 +100,6 @@ export class DatabaseStorage implements IStorage {
       title: torrents.title,
       description: torrents.description,
       magnetLink: torrents.magnetLink,
-      imageUrl: torrents.imageUrl,
       category: torrents.category,
       createdById: torrents.createdById,
       createdAt: torrents.createdAt,

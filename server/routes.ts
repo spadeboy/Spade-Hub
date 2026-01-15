@@ -63,12 +63,10 @@ export async function registerRoutes(
 
       const input = api.torrents.create.input.parse(req.body);
       
-      const torrentData = {
+      const torrent = await storage.createTorrent({
         ...input,
         createdById: user.claims.sub
-      };
-
-      const torrent = await storage.createTorrent(torrentData);
+      });
       res.status(201).json(torrent);
     } catch (err) {
       if (err instanceof z.ZodError) {

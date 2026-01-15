@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { api, type TorrentInput } from "@shared/routes";
+import { api } from "@shared/routes";
 import { useCreateTorrent } from "@/hooks/use-torrents";
+import type { InsertTorrent } from "@shared/schema";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +16,7 @@ export function CreateTorrentModal() {
   const [open, setOpen] = useState(false);
   const createTorrent = useCreateTorrent();
   
-  const form = useForm<TorrentInput>({
+  const form = useForm<InsertTorrent>({
     resolver: zodResolver(api.torrents.create.input),
     defaultValues: {
       title: "",
@@ -25,7 +26,7 @@ export function CreateTorrentModal() {
     },
   });
 
-  const onSubmit = (data: TorrentInput) => {
+  const onSubmit = (data: InsertTorrent) => {
     createTorrent.mutate(data, {
       onSuccess: () => {
         setOpen(false);

@@ -25,17 +25,9 @@ export function TorrentCard({ torrent }: { torrent: TorrentWithAuthor }) {
     >
       <Card className="glass-card overflow-hidden hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-1 transition-all duration-300 group h-full flex flex-col">
         <div className="relative h-48 overflow-hidden bg-muted/50">
-          {torrent.imageUrl ? (
-            <img 
-              src={torrent.imageUrl} 
-              alt={torrent.title} 
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-            />
-          ) : (
-            <div className="flex items-center justify-center h-full text-muted-foreground/30">
-              <Icon className="w-16 h-16" />
-            </div>
-          )}
+          <div className="flex items-center justify-center h-full text-muted-foreground/30">
+            <Icon className="w-16 h-16" />
+          </div>
           <div className="absolute top-3 right-3">
             <Badge className="bg-background/80 backdrop-blur text-foreground border-white/10 shadow-sm">
               {torrent.category}
@@ -50,8 +42,7 @@ export function TorrentCard({ torrent }: { torrent: TorrentWithAuthor }) {
             </h3>
           </Link>
           <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-            <User className="w-3.5 h-3.5" />
-            <span>{torrent.author?.username || "Anonymous"}</span>
+            <span>Anonymous</span>
           </div>
         </CardHeader>
 

@@ -48,7 +48,7 @@ export const api = {
     create: {
       method: 'POST' as const,
       path: '/api/torrents',
-      input: insertTorrentSchema.omit({ createdById: true }),
+      input: insertTorrentSchema,
       responses: {
         201: z.custom<typeof torrents.$inferSelect>(),
         400: errorSchemas.validation,
