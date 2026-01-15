@@ -1,11 +1,10 @@
 import type { Express } from "express";
 import type { Server } from "http";
-import { setupAuth } from "./hub_integrations/auth";
-import { registerAuthRoutes } from "./hub_integrations/auth";
+import { setupAuth, registerAuthRoutes } from "./hub_integrations/auth";
+import { registerObjectStorageRoutes } from "./hub_integrations/object_storage";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
-import { registerObjectStorageRoutes } from "./hub_integrations/object_storage";
 import { db } from "./db";
 import { users, torrents } from "@shared/schema";
 import { eq } from "drizzle-orm";
@@ -90,7 +89,7 @@ export async function registerRoutes(
   // Create torrent
   app.post(api.torrents.create.path, async (req, res) => {
     try {
-      const user = req.user as any;
+      const user = (req as any).user;
       
       if (user.email !== "ashiksa88@gmail.com") {
         return res.status(403).json({ message: "Only ashiksa88@gmail.com can upload torrents" });
@@ -125,7 +124,7 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Torrent not found" });
       }
 
-      const user = req.user as any;
+      const user = (req as any).user;
       if (user.email !== "ashiksa88@gmail.com") {
         return res.status(403).json({ message: "Only ashiksa88@gmail.com can edit torrents" });
       }
@@ -155,7 +154,7 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Torrent not found" });
       }
 
-      const user = req.user as any;
+      const user = (req as any).user;
       if (user.email !== "ashiksa88@gmail.com") {
         return res.status(403).json({ message: "Only ashiksa88@gmail.com can delete torrents" });
       }
