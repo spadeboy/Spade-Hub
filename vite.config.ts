@@ -11,22 +11,23 @@ export default defineConfig({
   plugins: [
     react(),
     nodePolyfills({
-      // 1. Force critical Node globals
+      // Polyfill all standard Node modules (stream, events, util, buffer)
+      protocolImports: true,
       globals: {
         Buffer: true,
         global: true,
         process: true,
       },
-      // 2. Polyfill all standard Node modules (stream, events, util)
-      protocolImports: true,
     }),
   ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "client", "src"),
       "@shared": path.resolve(__dirname, "shared"),
-      // 3. Force bittorrent-dht to point to an empty object (prevents build error)
-      "bittorrent-dht": "vite-plugin-node-polyfills/shims/empty",
+      
+      // FIX: Point these to your local empty file
+      "bittorrent-dht": path.resolve(__dirname, "client", "src", "empty.ts"),
+      "torrent-discovery": path.resolve(__dirname, "client", "src", "empty.ts"),
     },
   },
   root: path.resolve(__dirname, "client"),
