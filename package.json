@@ -91,6 +91,7 @@
     "typescript": "^5.6.3",
     "vaul": "^1.1.2",
     "vite": "^5.4.11",
+    "webtorrent": "^2.8.5",
     "wouter": "^3.3.5",
     "ws": "^8.18.0",
     "zod": "^3.24.2",
@@ -105,7 +106,9 @@
     "@types/passport-local": "^1.0.38",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.1",
-    "@types/ws": "^8.5.13"
+    "@types/webtorrent": "^0.110.1",
+    "@types/ws": "^8.5.13",
+    "vite-plugin-node-polyfills": "^0.25.0"
   },
   "overrides": {
     "drizzle-kit": {
