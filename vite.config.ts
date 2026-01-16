@@ -11,21 +11,23 @@ export default defineConfig({
   plugins: [
     react(),
     nodePolyfills({
-      protocolImports: true,
+      // Forces these polyfills to be included in the production bundle
+      include: ['buffer', 'process', 'util', 'stream', 'events'],
+      globals: {
+        Buffer: true,
+        global: true,
+        process: true,
+      },
     }),
-    // FIX: This manually creates the fake module.
-    // "enforce: pre" ensures this runs BEFORE Vite tries to ignore the library.
+    // Inline plugin to fix the "Client" export error
     {
       name: "fix-bittorrent-dht",
-      enforce: "pre", 
+      enforce: "pre",
       resolveId(id) {
-        if (id === "bittorrent-dht") {
-          return "\0virtual:bittorrent-dht";
-        }
+        if (id === "bittorrent-dht") return "\0virtual:bittorrent-dht";
       },
       load(id) {
         if (id === "\0virtual:bittorrent-dht") {
-          // We provide the missing "Client" export here
           return "export class Client {}; export default Client;";
         }
       }
@@ -42,4 +44,8 @@ export default defineConfig({
     outDir: path.resolve(__dirname, "dist/public"),
     emptyOutDir: true,
   },
+  // Optimization to prevent crashing on large libraries
+  optimizeDeps: {
+    include: ['webtorrent', 'readable-stream', 'process']
+  }
 });
