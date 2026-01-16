@@ -9,7 +9,6 @@ import { FaWindows, FaApple, FaAndroid } from "react-icons/fa";
 import { SiQbittorrent } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
-// Import auth to check login status
 import { auth } from "@/firebase";
 
 const categoryIcons: Record<string, any> = {
@@ -20,7 +19,13 @@ const categoryIcons: Record<string, any> = {
   Anime: Save,
 };
 
-export function TorrentCard({ torrent }: { torrent: TorrentWithAuthor }) {
+export function TorrentCard({ 
+  torrent, 
+  onToggle 
+}: { 
+  torrent: TorrentWithAuthor;
+  onToggle?: () => void; 
+}) {
   const Icon = categoryIcons[torrent.category] || Globe;
   const { toast } = useToast();
   
@@ -29,7 +34,6 @@ export function TorrentCard({ torrent }: { torrent: TorrentWithAuthor }) {
   const [isAuthenticated, setIsAuthenticated] = useState(!!auth.currentUser);
 
   useEffect(() => {
-    // Listen for auth changes to update button visibility
     const unsubscribe = auth.onAuthStateChanged((user) => {
       setIsAuthenticated(!!user);
     });
@@ -72,7 +76,11 @@ export function TorrentCard({ torrent }: { torrent: TorrentWithAuthor }) {
       updatedData = existingData.filter((item: any) => item.id !== torrent.id);
       if (listType === "Favorites") setIsFavorited(false);
       else setIsWatchLater(false);
+      
       toast({ title: `Removed from ${listType}`, description: `"${torrent.title}" removed.` });
+      
+      if (onToggle) onToggle();
+      
     } else {
       updatedData = [...existingData, torrent];
       if (listType === "Favorites") setIsFavorited(true);
@@ -98,13 +106,12 @@ export function TorrentCard({ torrent }: { torrent: TorrentWithAuthor }) {
             />
           )}
           
-          {/* ONLY SHOW ACTIONS IF LOGGED IN */}
           {isAuthenticated && (
             <div className="absolute top-3 left-3 flex gap-2">
               <button 
                 onClick={() => toggleAction("Favorites")}
                 className={`p-2 rounded-full backdrop-blur border border-white/10 transition-all shadow-lg ${
-                  isFavorited ? "bg-primary/80 text-white" : "bg-background/60 text-white hover:text-red-500"
+                  isFavorited ? "bg-primary/80 text-white" : "bg-black/40 text-white hover:text-red-500"
                 }`}
               >
                 <Heart className={`w-4 h-4 ${isFavorited ? "fill-current" : ""}`} />
@@ -112,7 +119,7 @@ export function TorrentCard({ torrent }: { torrent: TorrentWithAuthor }) {
               <button 
                 onClick={() => toggleAction("WatchLater")}
                 className={`p-2 rounded-full backdrop-blur border border-white/10 transition-all shadow-lg ${
-                  isWatchLater ? "bg-primary/80 text-white" : "bg-background/60 text-white hover:text-primary"
+                  isWatchLater ? "bg-primary/80 text-white" : "bg-black/40 text-white hover:text-primary"
                 }`}
               >
                 {isWatchLater ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
@@ -148,15 +155,21 @@ export function TorrentCard({ torrent }: { torrent: TorrentWithAuthor }) {
         </CardContent>
 
         <CardFooter className="p-5 pt-0 mt-auto">
+          {/* UPDATED STYLES:
+              1. bg-black/40: Dark "black" background by default.
+              2. hover:bg-primary: Turns purple on hover.
+              3. group/btn & group-hover/btn: Controls the arrow animation.
+          */}
           <Button 
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               navigator.clipboard.writeText(torrent.magnetLink);
               toast({ title: "Link Copied!", description: "Magnet link copied to clipboard." });
               window.location.href = torrent.magnetLink;
             }}
-            className="w-full bg-secondary/50 hover:bg-primary hover:text-white text-foreground border border-white/5 transition-all duration-300 group-hover:border-primary/50"
+            className="w-full bg-black/40 hover:bg-primary text-white border border-white/10 transition-all duration-300 hover:shadow-lg hover:shadow-primary/25 hover:scale-[1.02] active:scale-[0.98] group/btn"
           >
-            <Download className="w-4 h-4 mr-2" />
+            <Download className="w-4 h-4 mr-2 transition-transform duration-300 group-hover/btn:translate-y-1" />
             Magnet Download
           </Button>
         </CardFooter>

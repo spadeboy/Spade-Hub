@@ -5,6 +5,7 @@ import { Layout } from "@/components/Layout";
 import { Heart, ChevronLeft } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import { motion, AnimatePresence } from "framer-motion"; // Import animation library
 
 export default function Favorites() {
   const [items, setItems] = useState<TorrentWithAuthor[]>([]);
@@ -13,6 +14,11 @@ export default function Favorites() {
     const data = JSON.parse(localStorage.getItem("spade_favorites") || "[]");
     setItems(data);
   }, []);
+
+  // This function removes the item from the VIEW instantly
+  const handleRemove = (id: number) => {
+    setItems((prev) => prev.filter((item) => item.id !== id));
+  };
 
   return (
     <Layout>
@@ -36,18 +42,35 @@ export default function Favorites() {
           </div>
         </div>
 
-        {/* Grid Section */}
+        {/* Grid Section with Animation */}
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-32 bg-card/10 rounded-3xl border border-dashed border-white/5">
             <Heart className="w-12 h-12 text-muted-foreground/20 mb-4" />
             <p className="text-muted-foreground text-lg">Empty. Just like your social life.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {items.map((torrent) => (
-              <TorrentCard key={torrent.id} torrent={torrent} />
-            ))}
-          </div>
+          <motion.div 
+            layout 
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+          >
+            <AnimatePresence mode="popLayout">
+              {items.map((torrent) => (
+                <motion.div
+                  key={torrent.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+                >
+                  {/* We pass the onToggle prop here */}
+                  <TorrentCard 
+                    torrent={torrent} 
+                    onToggle={() => handleRemove(torrent.id)} 
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </motion.div>
         )}
       </div>
     </Layout>
