@@ -6,7 +6,7 @@ import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
 import { db } from "./db";
-import { users, torrents } from "@shared/schema";
+import { users, torrents, insertCommentSchema } from "@shared/schema"; // Added insertCommentSchema
 import { eq } from "drizzle-orm";
 
 export async function registerRoutes(
@@ -165,6 +165,39 @@ export async function registerRoutes(
     } catch (error) {
       console.error('Delete torrent error:', error);
       res.status(500).json({ message: "Failed to delete torrent" });
+    }
+  });
+
+  // --- NEW COMMENT ROUTES ---
+  
+  // Get Comments for a Torrent
+  app.get("/api/torrents/:id/comments", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      const comments = await storage.getComments(id);
+      res.json(comments);
+    } catch (error) {
+      console.error('Get comments error:', error);
+      res.status(500).json({ message: "Failed to get comments" });
+    }
+  });
+
+  // Post a Comment
+  app.post("/api/torrents/:id/comments", async (req, res) => {
+    try {
+      const torrentId = parseInt(req.params.id);
+      // Validate body using schema (ensure torrentId is passed correctly)
+      const data = insertCommentSchema.parse({ ...req.body, torrentId });
+      
+      const comment = await storage.createComment(data);
+      res.status(201).json(comment);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
+      console.error('Create comment error:', error);
+      res.status(500).json({ message: "Failed to create comment" });
     }
   });
 

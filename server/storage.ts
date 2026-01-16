@@ -1,11 +1,14 @@
 import { 
   torrents, 
   users,
+  comments, // Added
   type Torrent, 
   type InsertTorrent, 
   type UpdateTorrentRequest,
   type TorrentsQueryParams,
-  type TorrentWithAuthor
+  type TorrentWithAuthor,
+  type Comment, // Added
+  type InsertComment // Added
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, ilike, and } from "drizzle-orm";
@@ -20,6 +23,10 @@ export interface IStorage {
   
   // Helpers
   getUserTorrents(userId: string): Promise<TorrentWithAuthor[]>;
+
+  // NEW: Comment Methods
+  getComments(torrentId: number): Promise<Comment[]>;
+  createComment(comment: InsertComment): Promise<Comment>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -113,6 +120,19 @@ export class DatabaseStorage implements IStorage {
     .from(torrents)
     .where(eq(torrents.createdById, userId))
     .orderBy(desc(torrents.createdAt));
+  }
+
+  // --- COMMENT IMPLEMENTATION ---
+  async getComments(torrentId: number): Promise<Comment[]> {
+    return await db.select()
+      .from(comments)
+      .where(eq(comments.torrentId, torrentId))
+      .orderBy(desc(comments.createdAt)); // Newest first
+  }
+
+  async createComment(comment: InsertComment): Promise<Comment> {
+    const [newComment] = await db.insert(comments).values(comment).returning();
+    return newComment;
   }
 }
 

@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, varchar, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, varchar, integer, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -19,11 +19,29 @@ export const torrents = pgTable("torrents", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// NEW: Comments Table (Community Board)
+export const comments = pgTable("comments", {
+  id: serial("id").primaryKey(),
+  torrentId: integer("torrent_id").notNull().references(() => torrents.id, { onDelete: 'cascade' }),
+  text: text("text").notNull(),
+  emoji: text("emoji").notNull(),     // Stores the random emoji (👻)
+  colorClass: text("color_class").notNull(), // Stores the random color
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // === RELATIONS ===
-export const torrentsRelations = relations(torrents, ({ one }) => ({
+export const torrentsRelations = relations(torrents, ({ one, many }) => ({
   author: one(users, {
     fields: [torrents.createdById],
     references: [users.id],
+  }),
+  comments: many(comments), // Relation to comments
+}));
+
+export const commentsRelations = relations(comments, ({ one }) => ({
+  torrent: one(torrents, {
+    fields: [comments.torrentId],
+    references: [torrents.id],
   }),
 }));
 
@@ -38,9 +56,17 @@ export const insertTorrentSchema = createInsertSchema(torrents).omit({
   createdById: true 
 });
 
+export const insertCommentSchema = createInsertSchema(comments).omit({
+  id: true,
+  createdAt: true
+});
+
 // === EXPLICIT API CONTRACT TYPES ===
 export type Torrent = typeof torrents.$inferSelect;
 export type InsertTorrent = z.infer<typeof insertTorrentSchema>;
+
+export type Comment = typeof comments.$inferSelect;
+export type InsertComment = z.infer<typeof insertCommentSchema>;
 
 export type CreateTorrentRequest = InsertTorrent;
 export type UpdateTorrentRequest = Partial<InsertTorrent>;

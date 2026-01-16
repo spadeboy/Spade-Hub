@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRoute } from "wouter";
 import { useTorrent, useDeleteTorrent } from "@/hooks/use-torrents";
 import { Layout } from "@/components/Layout";
@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Download,
   ArrowLeft,
@@ -18,9 +20,8 @@ import {
   Check,
   Play,
   Construction,
-  ThumbsUp,
-  ThumbsDown,
-  X
+  MessageSquare,
+  Send
 } from "lucide-react";
 import { format } from "date-fns";
 import {
@@ -36,6 +37,7 @@ import {
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { auth } from "@/firebase";
 import { onAuthStateChanged } from "firebase/auth";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"; // ADDED: React Query for comments
 
 // --- SARCASTIC TOAST MESSAGES ---
 const LIKE_MESSAGES = [
@@ -56,9 +58,21 @@ const DISLIKE_MESSAGES = [
   "Yeah, keep spreading that negativity. It fuels us."
 ];
 
+// --- ANONYMOUS COMMENT ASSETS ---
+const ANON_EMOJIS = ["👻", "👽", "🤖", "👾", "🤡", "💀", "👺", "🎃", "💩", "🦄"];
+const ANON_COLORS = [
+  "bg-red-500/20 text-red-500",
+  "bg-blue-500/20 text-blue-500",
+  "bg-green-500/20 text-green-500",
+  "bg-yellow-500/20 text-yellow-500",
+  "bg-purple-500/20 text-purple-500",
+  "bg-pink-500/20 text-pink-500",
+];
+
 export default function TorrentDetail() {
   const [, params] = useRoute("/torrents/:id");
   const id = parseInt(params?.id || "0");
+  const queryClient = useQueryClient();
  
   const { data: torrent, isLoading, error } = useTorrent(id);
   const deleteTorrent = useDeleteTorrent();
@@ -71,17 +85,47 @@ export default function TorrentDetail() {
   const [isWatchLater, setIsWatchLater] = useState(false);
   const [showFunnyPopup, setShowFunnyPopup] = useState(false);
 
-  // --- VOTE STATES ---
   const [voteStatus, setVoteStatus] = useState<'like' | 'dislike' | null>(null);
   const [likesCount, setLikesCount] = useState(0);
   const [dislikesCount, setDislikesCount] = useState(0);
 
-  // SCROLL TO TOP
+  const [newComment, setNewComment] = useState("");
+
+  // --- FETCH COMMENTS FROM SERVER ---
+  const { data: comments = [] } = useQuery({
+    queryKey: [`/api/torrents/${id}/comments`],
+    queryFn: async () => {
+      const res = await fetch(`/api/torrents/${id}/comments`);
+      if (!res.ok) throw new Error("Failed to load comments");
+      return res.json();
+    }
+  });
+
+  // --- POST COMMENT TO SERVER ---
+  const postCommentMutation = useMutation({
+    mutationFn: async (newCommentData: any) => {
+      const res = await fetch(`/api/torrents/${id}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newCommentData),
+      });
+      if (!res.ok) throw new Error("Failed to post");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/torrents/${id}/comments`] });
+      setNewComment("");
+      toast({ title: "Posted anonymously", description: "Your secret is safe with the server." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Could not post comment.", variant: "destructive" });
+    }
+  });
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [id]);
 
-  // AUTH & LIST CHECK
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -93,7 +137,6 @@ export default function TorrentDetail() {
     setIsFavorited(favorites.some((item: any) => item.id === id));
     setIsWatchLater(watchLater.some((item: any) => item.id === id));
 
-    // Load Local Likes
     const likedItems = JSON.parse(localStorage.getItem("spade_likes") || "[]");
     const dislikedItems = JSON.parse(localStorage.getItem("spade_dislikes") || "[]");
 
@@ -178,6 +221,20 @@ export default function TorrentDetail() {
     localStorage.setItem("spade_dislikes", JSON.stringify(dislikedItems));
   };
 
+  const handleAddComment = () => {
+    if (!newComment.trim()) return;
+
+    // GENERATE RANDOM IDENTITY FOR DB
+    const randomEmoji = ANON_EMOJIS[Math.floor(Math.random() * ANON_EMOJIS.length)];
+    const randomColor = ANON_COLORS[Math.floor(Math.random() * ANON_COLORS.length)];
+
+    postCommentMutation.mutate({
+      text: newComment.trim(),
+      emoji: randomEmoji,
+      colorClass: randomColor
+    });
+  };
+
   const handleDownload = () => {
     if (!torrent) return;
     navigator.clipboard.writeText(torrent.magnetLink);
@@ -260,7 +317,7 @@ export default function TorrentDetail() {
               </h1>
 
               <div className="flex gap-2 shrink-0">
-                {/* --- FIX: Only show these buttons if USER is logged in --- */}
+                {/* User Action Buttons */}
                 {user && (
                   <>
                     <Button variant="outline" size="icon" onClick={() => toggleLocalAction("Favorites")}
@@ -273,7 +330,6 @@ export default function TorrentDetail() {
                     </Button>
                   </>
                 )}
-                {/* -------------------------------------------------------- */}
 
                 {isAdmin && (
                   <AlertDialog>
@@ -295,8 +351,6 @@ export default function TorrentDetail() {
             <div className="flex items-center gap-4">
                {/* LIKE / DISLIKE BUTTONS */}
                <div className="flex items-center gap-2 bg-white/5 p-1 rounded-full border border-white/10">
-                  
-                  {/* LIKE BUTTON */}
                   <button 
                     onClick={() => handleVote('like')}
                     className={`flex items-center gap-2 px-4 py-1.5 rounded-full font-bold transition-all duration-300 ${
@@ -308,10 +362,7 @@ export default function TorrentDetail() {
                     <span className="text-lg">👍🏻</span>
                     <span>{likesCount}</span>
                   </button>
-
                   <div className="w-px h-4 bg-white/10"></div>
-
-                  {/* DISLIKE BUTTON */}
                   <button 
                     onClick={() => handleVote('dislike')}
                     className={`flex items-center gap-2 px-4 py-1.5 rounded-full font-bold transition-all duration-300 ${
@@ -323,7 +374,6 @@ export default function TorrentDetail() {
                     <span className="text-lg">👎🏿</span>
                     <span>{dislikesCount}</span>
                   </button>
-
                </div>
 
               <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-full w-fit">
@@ -335,10 +385,63 @@ export default function TorrentDetail() {
             <div className="prose prose-invert max-w-none text-muted-foreground whitespace-pre-wrap leading-relaxed">
               {torrent.description}
             </div>
+
+            {/* --- PUBLIC COMMUNITY BOARD (Database Powered) --- */}
+            <div className="pt-8 border-t border-white/10">
+               <div className="flex items-center gap-2 mb-4">
+                  <MessageSquare className="w-5 h-5 text-primary" />
+                  <h3 className="text-lg font-bold text-white font-display">Community Board</h3>
+               </div>
+               
+               {/* Input Area */}
+               <div className="flex gap-2 mb-6">
+                 <Input 
+                    placeholder="Any issue or feels slow in the link? Drop a message here..." 
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    className="bg-white/5 border-white/10 focus-visible:ring-primary text-white"
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddComment()}
+                 />
+                 <Button onClick={handleAddComment} size="icon" className="bg-primary hover:bg-primary/90 text-white" disabled={postCommentMutation.isPending}>
+                    <Send className="w-4 h-4" />
+                 </Button>
+               </div>
+
+               {/* Comment List */}
+               <ScrollArea className="h-[300px] w-full pr-4 rounded-xl border border-white/5 bg-black/20 p-4">
+                  {comments.length === 0 ? (
+                    <div className="text-center text-muted-foreground py-10">No comments yet. Be the first! 👻</div>
+                  ) : (
+                    <div className="flex flex-col gap-4">
+                      {comments.map((comment: any) => (
+                        <div key={comment.id} className="flex gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                           {/* Anonymous Avatar */}
+                           <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl shrink-0 ${comment.colorClass}`}>
+                              {comment.emoji}
+                           </div>
+                           
+                           {/* Message Body */}
+                           <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-bold text-white/80">Anonymous</span>
+                                <span className="text-[10px] text-muted-foreground bg-white/5 px-1.5 py-0.5 rounded-sm">
+                                  {comment.createdAt ? format(new Date(comment.createdAt), 'MMM d, h:mm a') : 'Just now'}
+                                </span>
+                              </div>
+                              <p className="text-sm text-muted-foreground bg-white/5 p-3 rounded-r-xl rounded-bl-xl leading-relaxed">
+                                {comment.text}
+                              </p>
+                           </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+               </ScrollArea>
+            </div>
+
           </div>
         </div>
 
-        {/* FUNNY POPUP */}
         <Dialog open={showFunnyPopup} onOpenChange={setShowFunnyPopup}>
           <DialogContent className="sm:max-w-md bg-zinc-950 border-white/10 text-center p-8">
              <div className="flex flex-col items-center gap-6">
