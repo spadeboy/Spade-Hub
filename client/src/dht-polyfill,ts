@@ -1,4 +1,0 @@
-export class Client {}
-export default Client;
-
-// This file makes the build tool happy by providing a fake DHT Client

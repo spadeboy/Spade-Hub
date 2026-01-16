@@ -13,14 +13,19 @@ export default defineConfig({
     nodePolyfills({
       protocolImports: true,
     }),
-    // FIX: This manually creates the fake module so you don't need a physical file
+    // FIX: This manually creates the fake module.
+    // "enforce: pre" ensures this runs BEFORE Vite tries to ignore the library.
     {
       name: "fix-bittorrent-dht",
+      enforce: "pre", 
       resolveId(id) {
-        if (id === "bittorrent-dht") return "virtual:bittorrent-dht";
+        if (id === "bittorrent-dht") {
+          return "\0virtual:bittorrent-dht";
+        }
       },
       load(id) {
-        if (id === "virtual:bittorrent-dht") {
+        if (id === "\0virtual:bittorrent-dht") {
+          // We provide the missing "Client" export here
           return "export class Client {}; export default Client;";
         }
       }
