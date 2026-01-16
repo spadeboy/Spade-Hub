@@ -11,32 +11,22 @@ export default defineConfig({
   plugins: [
     react(),
     nodePolyfills({
-      // Forces these polyfills to be included in the production bundle
-      include: ['buffer', 'process', 'util', 'stream', 'events'],
+      // 1. Force critical Node globals
       globals: {
         Buffer: true,
         global: true,
         process: true,
       },
+      // 2. Polyfill all standard Node modules (stream, events, util)
+      protocolImports: true,
     }),
-    // Inline plugin to fix the "Client" export error
-    {
-      name: "fix-bittorrent-dht",
-      enforce: "pre",
-      resolveId(id) {
-        if (id === "bittorrent-dht") return "\0virtual:bittorrent-dht";
-      },
-      load(id) {
-        if (id === "\0virtual:bittorrent-dht") {
-          return "export class Client {}; export default Client;";
-        }
-      }
-    }
   ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "client", "src"),
       "@shared": path.resolve(__dirname, "shared"),
+      // 3. Force bittorrent-dht to point to an empty object (prevents build error)
+      "bittorrent-dht": "vite-plugin-node-polyfills/shims/empty",
     },
   },
   root: path.resolve(__dirname, "client"),
@@ -44,8 +34,4 @@ export default defineConfig({
     outDir: path.resolve(__dirname, "dist/public"),
     emptyOutDir: true,
   },
-  // Optimization to prevent crashing on large libraries
-  optimizeDeps: {
-    include: ['webtorrent', 'readable-stream', 'process']
-  }
 });

@@ -8,7 +8,7 @@
     
     <script>
       window.global = window;
-      window.process = { env: {} };
+      window.process = { env: { DEBUG: undefined } }; // Fixes "debug" module crash
     </script>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
