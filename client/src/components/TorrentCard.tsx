@@ -127,8 +127,10 @@ export function TorrentCard({
             </div>
           )}
 
-          <div className="absolute top-3 right-3">
-            <Badge className="bg-background/80 backdrop-blur text-foreground border-white/10 shadow-sm">
+          {/* CHANGED: Added opacity-0 and group-hover:opacity-100 */}
+          <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            {/* I also made the badge slightly darker so it pops more on images */}
+            <Badge className="bg-black/60 backdrop-blur text-white border-white/10 shadow-sm">
               {torrent.category}
             </Badge>
           </div>
@@ -155,11 +157,6 @@ export function TorrentCard({
         </CardContent>
 
         <CardFooter className="p-5 pt-0 mt-auto">
-          {/* UPDATED STYLES:
-              1. bg-black/40: Dark "black" background by default.
-              2. hover:bg-primary: Turns purple on hover.
-              3. group/btn & group-hover/btn: Controls the arrow animation.
-          */}
           <Button 
             onClick={(e) => {
               e.stopPropagation();
