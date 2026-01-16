@@ -48,7 +48,7 @@ export function CreateTorrentModal() {
 
       magnetLink: "",
 
-      category: "Other",
+      category: "Anime",
 
       imageUrl: "",
 
@@ -178,7 +178,7 @@ export function CreateTorrentModal() {
 
                       <SelectContent>
 
-                        {["Movies", "Games", "Music", "Software", "Other"].map((cat) => (
+                        {["Movies", "Games", "Music", "Software", "Anime"].map((cat) => (
 
                           <SelectItem key={cat} value={cat}>{cat}</SelectItem>
 

@@ -14,7 +14,7 @@ export const torrents = pgTable("torrents", {
   description: text("description").notNull(),
   magnetLink: text("magnet_link").notNull(),
   imageUrl: text("image_url"),
-  category: text("category").notNull(), // Movies, Games, Music, Software, Other
+  category: text("category").notNull(), // Movies, Games, Music, Software, Anime
   createdById: varchar("created_by_id").notNull().references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
 });

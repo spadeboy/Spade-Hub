@@ -17,7 +17,7 @@ const categoryIcons: Record<string, any> = {
   Games: Gamepad2,
   Music: Music,
   Software: Terminal,
-  Other: Save,
+  Anime: Save,
 };
 
 export function TorrentCard({ torrent }: { torrent: TorrentWithAuthor }) {

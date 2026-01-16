@@ -78,7 +78,7 @@ export default function Home() {
                 <SelectItem value="Games">Games</SelectItem>
                 <SelectItem value="Music">Music</SelectItem>
                 <SelectItem value="Software">Software</SelectItem>
-                <SelectItem value="Other">Other</SelectItem>
+                <SelectItem value="Anime">Anime</SelectItem>
               </SelectContent>
             </Select>
 
