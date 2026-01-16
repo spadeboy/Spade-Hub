@@ -13,13 +13,23 @@ export default defineConfig({
     nodePolyfills({
       protocolImports: true,
     }),
+    // FIX: This manually creates the fake module so you don't need a physical file
+    {
+      name: "fix-bittorrent-dht",
+      resolveId(id) {
+        if (id === "bittorrent-dht") return "virtual:bittorrent-dht";
+      },
+      load(id) {
+        if (id === "virtual:bittorrent-dht") {
+          return "export class Client {}; export default Client;";
+        }
+      }
+    }
   ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "client", "src"),
       "@shared": path.resolve(__dirname, "shared"),
-      // FIX ADDED: Redirect bittorrent-dht to our dummy file
-      "bittorrent-dht": path.resolve(__dirname, "client", "src", "dht-polyfill.ts"),
     },
   },
   root: path.resolve(__dirname, "client"),
