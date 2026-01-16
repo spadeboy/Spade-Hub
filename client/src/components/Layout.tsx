@@ -6,8 +6,24 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { 
+  Sheet, 
+  SheetContent, 
+  SheetTrigger,
+  SheetHeader,
+  SheetTitle,
+  SheetClose 
+} from "@/components/ui/sheet"; // ADDED: Sheet imports for mobile menu
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LogIn, LogOut, Spade, Heart, Plus, ListVideo } from "lucide-react";
+import { 
+  LogIn, 
+  LogOut, 
+  Spade, 
+  Heart, 
+  Plus, 
+  Menu, // ADDED: Menu icon
+  UploadCloud // ADDED: Icon for My Uploads
+} from "lucide-react";
 
 // --- FIREBASE IMPORTS ---
 import { useEffect, useState } from "react";
@@ -17,6 +33,8 @@ import { signInWithPopup, signOut, onAuthStateChanged } from "firebase/auth";
 export function Layout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<any>(null);
   const isAuthenticated = !!user;
+  // Exact admin check from your code
+  const isAdmin = user?.email === "ashiksa88@gmail.com";
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -37,6 +55,37 @@ export function Layout({ children }: { children: React.ReactNode }) {
     await signOut(auth);
   };
 
+  // Shared Navigation Links Component (Used for both Mobile and Desktop)
+  const NavLinks = ({ mobile = false }: { mobile?: boolean }) => (
+    <>
+      {isAuthenticated && (
+        <>
+          <Link href="/favorites">
+            <a className={`flex items-center gap-2 font-medium hover:text-red-500 transition-colors ${mobile ? "text-lg py-2" : "text-sm"}`}>
+              <Heart className={mobile ? "w-5 h-5" : "w-4 h-4"} />
+              <span>Favorites</span>
+            </a>
+          </Link>
+          <Link href="/watch-later">
+            <a className={`flex items-center gap-2 font-medium hover:text-primary transition-colors ${mobile ? "text-lg py-2" : "text-sm"}`}>
+              <Plus className={mobile ? "w-5 h-5" : "w-4 h-4"} />
+              <span>Watch Later</span>
+            </a>
+          </Link>
+        </>
+      )}
+      
+      {isAdmin && (
+        <Link href="/my-uploads">
+          <a className={`flex items-center gap-2 font-medium hover:text-primary transition-colors ${mobile ? "text-lg py-2" : "text-sm border-l border-white/10 pl-4"}`}>
+            {mobile && <UploadCloud className="w-5 h-5" />}
+            <span>My Uploads</span>
+          </a>
+        </Link>
+      )}
+    </>
+  );
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <header className="sticky top-0 z-50 w-full border-b border-white/5 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -51,28 +100,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </Link>
 
           <div className="flex items-center gap-4">
+            
+            {/* --- DESKTOP NAVIGATION (Hidden on Mobile) --- */}
             <nav className="hidden md:flex items-center gap-6">
-              {/* Favorites & Watch Later Links */}
-              {isAuthenticated && (
-                <>
-                  <Link href="/favorites" className="flex items-center gap-1.5 text-sm font-medium hover:text-red-500 transition-colors">
-                    <Heart className="w-4 h-4" />
-                    <span>Favorites</span>
-                  </Link>
-                  <Link href="/watch-later" className="flex items-center gap-1.5 text-sm font-medium hover:text-primary transition-colors">
-                    <Plus className="w-4 h-4" />
-                    <span>Watch Later</span>
-                  </Link>
-                </>
-              )}
-              
-              {user?.email === "ashiksa88@gmail.com" && (
-                <Link href="/my-uploads" className="text-sm font-medium hover:text-primary transition-colors border-l border-white/10 pl-4">
-                  My Uploads
-                </Link>
-              )}
+              <NavLinks />
             </nav>
 
+            {/* --- USER PROFILE / LOGIN BUTTON --- */}
             {isAuthenticated ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -99,15 +133,48 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
+              // Only show "Sign In" button on Desktop here (Mobile has it inside the sheet or you can keep it here)
               <Button 
                 onClick={handleGoogleLogin} 
                 variant="default" 
-                className="bg-primary hover:bg-primary/90 font-semibold shadow-lg shadow-primary/20"
+                className="hidden md:flex bg-primary hover:bg-primary/90 font-semibold shadow-lg shadow-primary/20"
               >
                 <LogIn className="w-4 h-4 mr-2" />
                 Sign In
               </Button>
             )}
+
+            {/* --- MOBILE NAVIGATION (Hamburger Menu) --- */}
+            <div className="md:hidden">
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+                    <Menu className="w-6 h-6" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="bg-background border-white/10 w-[300px]">
+                  <SheetHeader>
+                    <SheetTitle className="text-left font-display font-bold text-xl">Menu</SheetTitle>
+                  </SheetHeader>
+                  <div className="flex flex-col gap-6 mt-8">
+                    {/* Reuse the exact same links, but styled for mobile */}
+                    <NavLinks mobile={true} />
+                    
+                    {!isAuthenticated && (
+                       <Button 
+                        onClick={handleGoogleLogin} 
+                        variant="default" 
+                        className="w-full bg-primary hover:bg-primary/90 font-semibold"
+                      >
+                        <LogIn className="w-4 h-4 mr-2" />
+                        Sign In
+                      </Button>
+                    )}
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
+
           </div>
         </div>
       </header>
