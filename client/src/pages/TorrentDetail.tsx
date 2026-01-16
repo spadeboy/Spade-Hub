@@ -149,7 +149,6 @@ export default function TorrentDetail() {
     } else {
       setVoteStatus(type);
       
-      // GET RANDOM MESSAGE
       const randomMsg = type === 'like' 
         ? LIKE_MESSAGES[Math.floor(Math.random() * LIKE_MESSAGES.length)]
         : DISLIKE_MESSAGES[Math.floor(Math.random() * DISLIKE_MESSAGES.length)];
@@ -158,7 +157,6 @@ export default function TorrentDetail() {
         likedItems.push(id);
         setLikesCount(1);
         setDislikesCount(0);
-        // WHITE HAND TOAST
         toast({ 
           title: "👍🏻 Liked", 
           description: randomMsg,
@@ -168,7 +166,6 @@ export default function TorrentDetail() {
         dislikedItems.push(id);
         setLikesCount(0);
         setDislikesCount(1);
-        // BLACK HAND TOAST (Dark Mode style)
         toast({ 
           title: "👎🏿 Disliked", 
           description: randomMsg,
@@ -263,14 +260,21 @@ export default function TorrentDetail() {
               </h1>
 
               <div className="flex gap-2 shrink-0">
-                <Button variant="outline" size="icon" onClick={() => toggleLocalAction("Favorites")}
-                  className={`rounded-xl border-white/10 transition-all ${isFavorited ? "bg-primary text-white border-primary" : "bg-white/5 hover:bg-white/10 text-white"}`}>
-                  <Heart className={`h-5 w-5 ${isFavorited ? "fill-current" : ""}`} />
-                </Button>
-                <Button variant="outline" size="icon" onClick={() => toggleLocalAction("WatchLater")}
-                  className={`rounded-xl border-white/10 transition-all ${isWatchLater ? "bg-primary text-white border-primary" : "bg-white/5 hover:bg-white/10 text-white"}`}>
-                  {isWatchLater ? <Check className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
-                </Button>
+                {/* --- FIX: Only show these buttons if USER is logged in --- */}
+                {user && (
+                  <>
+                    <Button variant="outline" size="icon" onClick={() => toggleLocalAction("Favorites")}
+                      className={`rounded-xl border-white/10 transition-all ${isFavorited ? "bg-primary text-white border-primary" : "bg-white/5 hover:bg-white/10 text-white"}`}>
+                      <Heart className={`h-5 w-5 ${isFavorited ? "fill-current" : ""}`} />
+                    </Button>
+                    <Button variant="outline" size="icon" onClick={() => toggleLocalAction("WatchLater")}
+                      className={`rounded-xl border-white/10 transition-all ${isWatchLater ? "bg-primary text-white border-primary" : "bg-white/5 hover:bg-white/10 text-white"}`}>
+                      {isWatchLater ? <Check className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
+                    </Button>
+                  </>
+                )}
+                {/* -------------------------------------------------------- */}
+
                 {isAdmin && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>

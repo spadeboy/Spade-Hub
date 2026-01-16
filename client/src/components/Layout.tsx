@@ -11,9 +11,9 @@ import {
   SheetContent, 
   SheetTrigger,
   SheetHeader,
-  SheetTitle,
-  SheetClose 
-} from "@/components/ui/sheet"; // ADDED: Sheet imports for mobile menu
+  SheetTitle, 
+  SheetClose
+} from "@/components/ui/sheet"; 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
   LogIn, 
@@ -21,9 +21,11 @@ import {
   Spade, 
   Heart, 
   Plus, 
-  Menu, // ADDED: Menu icon
-  UploadCloud // ADDED: Icon for My Uploads
+  UploadCloud 
 } from "lucide-react";
+
+// --- COMPONENTS ---
+import { AIAssistant } from "./AIAssistant"; 
 
 // --- FIREBASE IMPORTS ---
 import { useEffect, useState } from "react";
@@ -33,7 +35,6 @@ import { signInWithPopup, signOut, onAuthStateChanged } from "firebase/auth";
 export function Layout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<any>(null);
   const isAuthenticated = !!user;
-  // Exact admin check from your code
   const isAdmin = user?.email === "ashiksa88@gmail.com";
 
   useEffect(() => {
@@ -55,7 +56,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
     await signOut(auth);
   };
 
-  // Shared Navigation Links Component (Used for both Mobile and Desktop)
   const NavLinks = ({ mobile = false }: { mobile?: boolean }) => (
     <>
       {isAuthenticated && (
@@ -101,79 +101,106 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
           <div className="flex items-center gap-4">
             
-            {/* --- DESKTOP NAVIGATION (Hidden on Mobile) --- */}
+            {/* DESKTOP NAV (Hidden on Mobile) */}
             <nav className="hidden md:flex items-center gap-6">
               <NavLinks />
             </nav>
 
-            {/* --- USER PROFILE / LOGIN BUTTON --- */}
+            {/* USER PROFILE / LOGOUT (Desktop & Mobile if Logged In) */}
             {isAuthenticated ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                    <Avatar className="h-10 w-10 border border-white/10">
-                      <AvatarImage src={user?.photoURL || ""} alt={user?.displayName || ""} />
-                      <AvatarFallback className="bg-primary/20 text-primary">
-                        {user?.email?.[0]?.toUpperCase() || "U"}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56 bg-card border-white/10" align="end" forceMount>
-                  <div className="flex items-center justify-start gap-2 p-2">
-                    <div className="flex flex-col space-y-1 leading-none">
-                      <p className="font-medium">{user?.displayName || "User"}</p>
-                      <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
-                    </div>
-                  </div>
-                  <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive cursor-pointer">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Log out</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <>
+                 {/* DESKTOP DROPDOWN */}
+                 <div className="hidden md:block">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                          <Avatar className="h-10 w-10 border border-white/10 cursor-pointer">
+                            <AvatarImage src={user?.photoURL || ""} alt={user?.displayName || ""} />
+                            <AvatarFallback className="bg-primary/20 text-primary">
+                              {user?.email?.[0]?.toUpperCase() || "U"}
+                            </AvatarFallback>
+                          </Avatar>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="w-56 bg-card border-white/10" align="end" forceMount>
+                        <div className="flex items-center justify-start gap-2 p-2">
+                          <div className="flex flex-col space-y-1 leading-none">
+                            <p className="font-medium">{user?.displayName || "User"}</p>
+                            <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                          </div>
+                        </div>
+                        <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive cursor-pointer">
+                          <LogOut className="mr-2 h-4 w-4" />
+                          <span>Log out</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                 </div>
+
+                 {/* MOBILE PROFILE TRIGGER (Replaces Hamburger) */}
+                 <div className="md:hidden">
+                    <Sheet>
+                      <SheetTrigger asChild>
+                        {/* CHANGED: Replaced Menu Icon with User Avatar */}
+                        <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
+                          <Avatar className="h-9 w-9 border border-white/10 ring-2 ring-transparent active:ring-primary/50 transition-all">
+                            <AvatarImage src={user?.photoURL || ""} />
+                            <AvatarFallback className="bg-primary/20 text-primary">
+                              {user?.email?.[0]?.toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                        </Button>
+                      </SheetTrigger>
+                      <SheetContent side="right" className="bg-background border-white/10 w-[300px]">
+                        <SheetHeader>
+                          <SheetTitle className="text-left font-display font-bold text-xl">Menu</SheetTitle>
+                        </SheetHeader>
+                        <div className="flex flex-col gap-6 mt-8">
+                          
+                          {/* User Info in Mobile Menu */}
+                          <div className="flex items-center gap-3 pb-6 border-b border-white/10">
+                              <Avatar className="h-12 w-12 border border-white/10">
+                                <AvatarImage src={user?.photoURL || ""} />
+                                <AvatarFallback className="bg-primary/20 text-primary">
+                                  {user?.email?.[0]?.toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex flex-col">
+                                <span className="font-medium text-lg">{user?.displayName || "User"}</span>
+                                <span className="text-xs text-muted-foreground truncate w-40">{user?.email}</span>
+                              </div>
+                          </div>
+
+                          <NavLinks mobile={true} />
+                          
+                          <div className="mt-auto">
+                            <SheetClose asChild>
+                              <Button 
+                                onClick={handleLogout} 
+                                variant="destructive" 
+                                className="w-full justify-start"
+                              >
+                                <LogOut className="w-4 h-4 mr-2" />
+                                Log Out
+                              </Button>
+                            </SheetClose>
+                          </div>
+                        </div>
+                      </SheetContent>
+                    </Sheet>
+                 </div>
+              </>
             ) : (
-              // Only show "Sign In" button on Desktop here (Mobile has it inside the sheet or you can keep it here)
+              // --- GUEST USER: Show Sign In Button Directly (Desktop & Mobile) ---
               <Button 
                 onClick={handleGoogleLogin} 
                 variant="default" 
-                className="hidden md:flex bg-primary hover:bg-primary/90 font-semibold shadow-lg shadow-primary/20"
+                className="bg-primary hover:bg-primary/90 font-semibold shadow-lg shadow-primary/20"
               >
                 <LogIn className="w-4 h-4 mr-2" />
                 Sign In
               </Button>
             )}
-
-            {/* --- MOBILE NAVIGATION (Hamburger Menu) --- */}
-            <div className="md:hidden">
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
-                    <Menu className="w-6 h-6" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="right" className="bg-background border-white/10 w-[300px]">
-                  <SheetHeader>
-                    <SheetTitle className="text-left font-display font-bold text-xl">Menu</SheetTitle>
-                  </SheetHeader>
-                  <div className="flex flex-col gap-6 mt-8">
-                    {/* Reuse the exact same links, but styled for mobile */}
-                    <NavLinks mobile={true} />
-                    
-                    {!isAuthenticated && (
-                       <Button 
-                        onClick={handleGoogleLogin} 
-                        variant="default" 
-                        className="w-full bg-primary hover:bg-primary/90 font-semibold"
-                      >
-                        <LogIn className="w-4 h-4 mr-2" />
-                        Sign In
-                      </Button>
-                    )}
-                  </div>
-                </SheetContent>
-              </Sheet>
-            </div>
 
           </div>
         </div>
@@ -188,6 +215,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <p>© {new Date().getFullYear()} Spade Hub. All rights reserved.</p>
         </div>
       </footer>
+
+      <AIAssistant />
     </div>
   );
 }
