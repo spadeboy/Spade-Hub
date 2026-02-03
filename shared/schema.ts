@@ -15,6 +15,7 @@ export const torrents = pgTable("torrents", {
   magnetLink: text("magnet_link").notNull(),
   imageUrl: text("image_url"),
   category: text("category").notNull(), // Movies, Games, Music, Software, Anime
+  releaseYear: integer("release_year"), // Optional release year
   createdById: varchar("created_by_id").notNull().references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -50,10 +51,10 @@ export const usersRelations = relations(users, ({ many }) => ({
 }));
 
 // === BASE SCHEMAS ===
-export const insertTorrentSchema = createInsertSchema(torrents).omit({ 
-  id: true, 
+export const insertTorrentSchema = createInsertSchema(torrents).omit({
+  id: true,
   createdAt: true,
-  createdById: true 
+  createdById: true
 });
 
 export const insertCommentSchema = createInsertSchema(comments).omit({

@@ -1,10 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, buildUrl, type TorrentInput } from "@shared/routes";
-import { type TorrentsQueryParams } from "@shared/schema"; 
+import { type TorrentsQueryParams } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 
 export function useTorrents(params?: TorrentsQueryParams) {
-  const queryString = params 
+  const queryString = params
     ? "?" + new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)])).toString()
     : "";
 
@@ -15,6 +15,7 @@ export function useTorrents(params?: TorrentsQueryParams) {
       if (!res.ok) throw new Error("Failed to fetch torrents");
       return api.torrents.list.responses[200].parse(await res.json());
     },
+    placeholderData: (previousData) => previousData, // Keep data visible while fetching
   });
 }
 
@@ -49,7 +50,7 @@ export function useCreateTorrent() {
         const error = await res.json();
         throw new Error(error.message || "Failed to create torrent");
       }
-      
+
       return api.torrents.create.responses[201].parse(await res.json());
     },
     onSuccess: () => {

@@ -1,18 +1,33 @@
 import { useState, useEffect } from "react";
 import { useTorrents } from "@/hooks/use-torrents";
 import { Layout } from "@/components/Layout";
+import { HeroCarousel } from "@/components/HeroCarousel";
+import { MediaRow } from "@/components/MediaRow";
 import { TorrentCard } from "@/components/TorrentCard";
 import { CreateTorrentModal } from "@/components/CreateTorrentModal";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, SlidersHorizontal, Loader2, AlertCircle, SearchX } from "lucide-react";
+import { Search, Loader2, AlertCircle, SearchX } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 // --- FIREBASE IMPORTS ---
 import { auth } from "@/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 
+import { useDebounce } from "@/hooks/use-debounce";
+
 export default function Home() {
   const [isAdmin, setIsAdmin] = useState(false);
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 500); // 500ms delay
+
+  // We can fetch "all" and then filter client-side for rows if the API doesn't support flexible queries efficiently 
+  // or we can just fetch everything since it's likely a small DB for now.
+  // Ideally, we'd have specific hooks for "Featured", "Movies", etc.
+
+  const { data: torrents, isLoading, error } = useTorrents({
+    search: debouncedSearch || undefined,
+    sort: "newest"
+  });
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -25,113 +40,95 @@ export default function Home() {
     return () => unsubscribe();
   }, []);
 
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState<string>("all");
-  const [sort, setSort] = useState<"newest" | "oldest">("newest");
-  
-  const { data: torrents, isLoading, error } = useTorrents({
-    search: search || undefined,
-    category: category !== "all" ? category : undefined,
-    sort
-  });
+  // Filter functionality
+  // In a real large-scale app, these should be separate API calls.
+  const featured = torrents?.slice(0, 5) || [];
+  const latestUploads = torrents || [];
+  const movies = torrents?.filter(t => t.category === "Movies") || [];
+  const games = torrents?.filter(t => t.category === "Games") || [];
+  const software = torrents?.filter(t => t.category === "Software") || [];
 
   return (
-    <Layout>
-      {/* Hero / Header Section */}
-      <section className="mb-12 relative">
-        <div className="absolute inset-0 bg-primary/5 blur-3xl rounded-full -z-10 transform -translate-y-1/2" />
-        
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
-          <div className="space-y-2">
-            <h1 className="text-4xl md:text-5xl font-display font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-400">
-              Smoke it
-            </h1>
-            <p className="text-muted-foreground text-lg max-w-xl">
-              The premier destination for sharing and discovering magnet links safely and securely.
-            </p>
-          </div>
-          
-          {/* HEADER BUTTON - Fixed: Self-closing tag */}
-          {isAdmin && <CreateTorrentModal />}
+    <Layout transparentHeader={true}>
+
+      {isLoading ? (
+        <div className="flex flex-col items-center justify-center min-h-screen bg-black">
+          <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
+          <p className="text-muted-foreground animate-pulse">Loading experience...</p>
         </div>
-
-        {/* Filters Bar */}
-        <div className="bg-card/30 backdrop-blur-md border border-white/5 p-4 rounded-2xl flex flex-col md:flex-row gap-4 items-center">
-          <div className="relative flex-1 w-full">
-            <Search className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-            <Input 
-              placeholder="Search torrents..." 
-              className="pl-10 bg-background/50 border-transparent focus:border-primary/50 transition-all"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-          
-          <div className="flex gap-2 w-full md:w-auto">
-            <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger className="w-full md:w-[180px] bg-background/50 border-transparent">
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                <SelectItem value="Movies">Movies</SelectItem>
-                <SelectItem value="Games">Games</SelectItem>
-                <SelectItem value="Music">Music</SelectItem>
-                <SelectItem value="Software">Software</SelectItem>
-                <SelectItem value="Anime">Anime</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={sort} onValueChange={(v: any) => setSort(v)}>
-              <SelectTrigger className="w-full md:w-[150px] bg-background/50 border-transparent">
-                <SlidersHorizontal className="w-4 h-4 mr-2" />
-                <SelectValue placeholder="Sort" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="newest">Newest First</SelectItem>
-                <SelectItem value="oldest">Oldest First</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+      ) : error ? (
+        <div className="flex flex-col items-center justify-center min-h-screen text-center bg-black">
+          <AlertCircle className="w-12 h-12 text-destructive mb-4" />
+          <h3 className="text-xl font-bold mb-2">Connection Error</h3>
+          <p className="text-muted-foreground max-w-md">
+            Failed to load content. Please check your connection.
+          </p>
         </div>
-      </section>
+      ) : (
+        <div className="pb-20 bg-background min-h-screen">
 
-      {/* Content Grid */}
-      <section>
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
-            <p className="text-muted-foreground animate-pulse">Loading torrents...</p>
-          </div>
-        ) : error ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <AlertCircle className="w-12 h-12 text-destructive mb-4" />
-            <h3 className="text-xl font-bold mb-2">Failed to load torrents</h3>
-            <p className="text-muted-foreground max-w-md">
-              There was a problem connecting to the server. Please try again later.
-            </p>
-          </div>
-        ) : torrents?.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-white/10 rounded-3xl bg-card/10">
-            <div className="bg-muted/30 p-4 rounded-full mb-4">
-              <SearchX className="w-8 h-8 text-muted-foreground" />
+          {/* HERO SECTION - Always visible to prevent layout shift */}
+          <HeroCarousel featured={featured} />
+
+          {/* MAIN CONTENT CONTAINER */}
+          <div className="space-y-8 relative z-20 -mt-28">
+
+            {/* SEARCH BAR */}
+            <div className="w-full px-6 md:px-12 lg:px-16 mb-12 flex justify-end">
+              {/* Mobile/Desktop Search Input */}
+              <div className="relative max-w-xl w-full">
+                <Search className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                <Input
+                  placeholder="Search titles, actors, genres..."
+                  className="pl-10 h-11 bg-white/5 border-white/10 focus:border-primary/50 text-white rounded-full backdrop-blur-md transition-all focus:bg-white/10 hover:bg-white/10"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
             </div>
-            <h3 className="text-xl font-bold mb-2">No torrents found</h3>
-            <p className="text-muted-foreground max-w-md mb-6">
-              We couldn't find anything matching your criteria. Try adjusting your filters or share something new!
-            </p>
-            
-            {/* EMPTY STATE BUTTON - Fixed: Self-closing tag */}
-            {isAdmin && <CreateTorrentModal />}
+
+            {search ? (
+              // SEARCH RESULTS VIEW
+              <div className="w-full px-6 md:px-12 lg:px-16">
+                <h2 className="text-2xl font-bold mb-6">Search Results for "{search}"</h2>
+                {torrents?.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-white/10 rounded-3xl bg-card/10">
+                    <div className="bg-muted/30 p-4 rounded-full mb-4">
+                      <SearchX className="w-8 h-8 text-muted-foreground" />
+                    </div>
+                    <h3 className="text-xl font-bold mb-2">No results found</h3>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
+                    {torrents?.map((torrent) => (
+                      <div key={torrent.id} className="aspect-[2/3] w-full h-full">
+                        <TorrentCard torrent={torrent} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              // STANDARD "ROWS" VIEW
+              <div className="space-y-4 md:space-y-12">
+                <MediaRow title="Latest Uploads" torrents={latestUploads} />
+                {movies.length > 0 && <MediaRow title="Popular Movies" torrents={movies} />}
+                {games.length > 0 && <MediaRow title="Trending Games" torrents={games} />}
+                {software.length > 0 && <MediaRow title="Software & Tools" torrents={software} />}
+
+                {/* Create Button (Admin) */}
+                {isAdmin && (
+                  <div className="fixed bottom-8 right-8 z-50">
+                    <div className="shadow-2xl shadow-primary/50 rounded-full">
+                      <CreateTorrentModal />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {torrents?.map((torrent) => (
-              <TorrentCard key={torrent.id} torrent={torrent} />
-            ))}
-          </div>
-        )}
-      </section>
+        </div>
+      )}
     </Layout>
   );
 }

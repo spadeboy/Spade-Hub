@@ -73,14 +73,14 @@ export default function TorrentDetail() {
   const [, params] = useRoute("/torrents/:id");
   const id = parseInt(params?.id || "0");
   const queryClient = useQueryClient();
- 
+
   const { data: torrent, isLoading, error } = useTorrent(id);
   const deleteTorrent = useDeleteTorrent();
   const { toast } = useToast();
- 
+
   const [user, setUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  
+
   const [isFavorited, setIsFavorited] = useState(false);
   const [isWatchLater, setIsWatchLater] = useState(false);
   const [showFunnyPopup, setShowFunnyPopup] = useState(false);
@@ -191,8 +191,8 @@ export default function TorrentDetail() {
       toast({ title: "Vote Removed", description: "Indecisive much?" });
     } else {
       setVoteStatus(type);
-      
-      const randomMsg = type === 'like' 
+
+      const randomMsg = type === 'like'
         ? LIKE_MESSAGES[Math.floor(Math.random() * LIKE_MESSAGES.length)]
         : DISLIKE_MESSAGES[Math.floor(Math.random() * DISLIKE_MESSAGES.length)];
 
@@ -200,8 +200,8 @@ export default function TorrentDetail() {
         likedItems.push(id);
         setLikesCount(1);
         setDislikesCount(0);
-        toast({ 
-          title: "👍🏻 Liked", 
+        toast({
+          title: "👍🏻 Liked",
           description: randomMsg,
           className: "bg-white text-black border-black/10"
         });
@@ -209,8 +209,8 @@ export default function TorrentDetail() {
         dislikedItems.push(id);
         setLikesCount(0);
         setDislikesCount(1);
-        toast({ 
-          title: "👎🏿 Disliked", 
+        toast({
+          title: "👎🏿 Disliked",
           description: randomMsg,
           className: "bg-zinc-950 text-white border-white/10"
         });
@@ -249,7 +249,7 @@ export default function TorrentDetail() {
         title: torrent.title,
         text: `Check out ${torrent.title} on Spade Hub!`,
         url: window.location.href,
-      }).catch(() => {});
+      }).catch(() => { });
     } else {
       navigator.clipboard.writeText(window.location.href);
       toast({ title: "Link Copied", description: "Copied to clipboard." });
@@ -260,10 +260,24 @@ export default function TorrentDetail() {
   if (error || !torrent) return <Layout>Torrent Not Found</Layout>;
 
   return (
-    <Layout>
-      <div className="max-w-5xl mx-auto pb-20">
-        <Button variant="ghost" onClick={() => window.history.back()} className="mb-6 pl-0 hover:bg-transparent hover:text-primary transition-colors">
-          <ArrowLeft className="mr-2 h-4 w-4" /> Back
+    <Layout transparentHeader={true}>
+
+      {/* IMMERSIVE BACKGROUND */}
+      <div className="absolute inset-0 w-full h-[80vh] overflow-hidden -z-10">
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent z-10" />
+        <div className="absolute inset-0 bg-gradient-to-r from-background via-background/60 to-transparent z-10" />
+        {torrent.imageUrl && (
+          <img
+            src={torrent.imageUrl}
+            alt="Background"
+            className="w-full h-full object-cover opacity-30 blur-sm scale-105"
+          />
+        )}
+      </div>
+
+      <div className="max-w-7xl mx-auto pt-24 pb-20 px-4 md:px-8 relative z-20">
+        <Button variant="ghost" onClick={() => window.history.back()} className="mb-6 pl-0 hover:bg-transparent text-white/70 hover:text-primary transition-colors">
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Home
         </Button>
 
         <div className="grid md:grid-cols-[350px_1fr] gap-8 lg:gap-12 mb-16">
@@ -278,7 +292,7 @@ export default function TorrentDetail() {
 
             <div className="flex flex-col gap-3">
               {torrent.category === "Movies" && (
-                <Button 
+                <Button
                   size="lg"
                   onClick={() => setShowFunnyPopup(true)}
                   className="w-full text-lg font-bold h-12 bg-white text-black hover:bg-primary hover:text-white transition-all duration-300 shadow-lg hover:scale-[1.02] active:scale-[0.98] group"
@@ -349,32 +363,30 @@ export default function TorrentDetail() {
             </div>
 
             <div className="flex items-center gap-4">
-               {/* LIKE / DISLIKE BUTTONS */}
-               <div className="flex items-center gap-2 bg-white/5 p-1 rounded-full border border-white/10">
-                  <button 
-                    onClick={() => handleVote('like')}
-                    className={`flex items-center gap-2 px-4 py-1.5 rounded-full font-bold transition-all duration-300 ${
-                      voteStatus === 'like' 
-                      ? "bg-white text-black shadow-[0_0_15px_rgba(255,255,255,0.3)] scale-105" 
-                      : "text-white hover:bg-white/10"
+              {/* LIKE / DISLIKE BUTTONS */}
+              <div className="flex items-center gap-2 bg-white/5 p-1 rounded-full border border-white/10">
+                <button
+                  onClick={() => handleVote('like')}
+                  className={`flex items-center gap-2 px-4 py-1.5 rounded-full font-bold transition-all duration-300 ${voteStatus === 'like'
+                    ? "bg-white text-black shadow-[0_0_15px_rgba(255,255,255,0.3)] scale-105"
+                    : "text-white hover:bg-white/10"
                     }`}
-                  >
-                    <span className="text-lg">👍🏻</span>
-                    <span>{likesCount}</span>
-                  </button>
-                  <div className="w-px h-4 bg-white/10"></div>
-                  <button 
-                    onClick={() => handleVote('dislike')}
-                    className={`flex items-center gap-2 px-4 py-1.5 rounded-full font-bold transition-all duration-300 ${
-                      voteStatus === 'dislike' 
-                      ? "bg-black text-white border border-white/20 shadow-[0_0_15px_rgba(0,0,0,0.5)] scale-105" 
-                      : "text-white hover:bg-white/10"
+                >
+                  <span className="text-lg">👍🏻</span>
+                  <span>{likesCount}</span>
+                </button>
+                <div className="w-px h-4 bg-white/10"></div>
+                <button
+                  onClick={() => handleVote('dislike')}
+                  className={`flex items-center gap-2 px-4 py-1.5 rounded-full font-bold transition-all duration-300 ${voteStatus === 'dislike'
+                    ? "bg-black text-white border border-white/20 shadow-[0_0_15px_rgba(0,0,0,0.5)] scale-105"
+                    : "text-white hover:bg-white/10"
                     }`}
-                  >
-                    <span className="text-lg">👎🏿</span>
-                    <span>{dislikesCount}</span>
-                  </button>
-               </div>
+                >
+                  <span className="text-lg">👎🏿</span>
+                  <span>{dislikesCount}</span>
+                </button>
+              </div>
 
               <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-full w-fit">
                 <Calendar className="w-4 h-4 text-muted-foreground" />
@@ -388,55 +400,55 @@ export default function TorrentDetail() {
 
             {/* --- PUBLIC COMMUNITY BOARD (Database Powered) --- */}
             <div className="pt-8 border-t border-white/10">
-               <div className="flex items-center gap-2 mb-4">
-                  <MessageSquare className="w-5 h-5 text-primary" />
-                  <h3 className="text-lg font-bold text-white font-display">Community Board</h3>
-               </div>
-               
-               {/* Input Area */}
-               <div className="flex gap-2 mb-6">
-                 <Input 
-                    placeholder="Any issue or feels slow in the link? Drop a message here..." 
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    className="bg-white/5 border-white/10 focus-visible:ring-primary text-white"
-                    onKeyDown={(e) => e.key === 'Enter' && handleAddComment()}
-                 />
-                 <Button onClick={handleAddComment} size="icon" className="bg-primary hover:bg-primary/90 text-white" disabled={postCommentMutation.isPending}>
-                    <Send className="w-4 h-4" />
-                 </Button>
-               </div>
+              <div className="flex items-center gap-2 mb-4">
+                <MessageSquare className="w-5 h-5 text-primary" />
+                <h3 className="text-lg font-bold text-white font-display">Community Board</h3>
+              </div>
 
-               {/* Comment List */}
-               <ScrollArea className="h-[300px] w-full pr-4 rounded-xl border border-white/5 bg-black/20 p-4">
-                  {comments.length === 0 ? (
-                    <div className="text-center text-muted-foreground py-10">No comments yet. Be the first! 👻</div>
-                  ) : (
-                    <div className="flex flex-col gap-4">
-                      {comments.map((comment: any) => (
-                        <div key={comment.id} className="flex gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                           {/* Anonymous Avatar */}
-                           <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl shrink-0 ${comment.colorClass}`}>
-                              {comment.emoji}
-                           </div>
-                           
-                           {/* Message Body */}
-                           <div className="flex flex-col gap-1">
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-bold text-white/80">Anonymous</span>
-                                <span className="text-[10px] text-muted-foreground bg-white/5 px-1.5 py-0.5 rounded-sm">
-                                  {comment.createdAt ? format(new Date(comment.createdAt), 'MMM d, h:mm a') : 'Just now'}
-                                </span>
-                              </div>
-                              <p className="text-sm text-muted-foreground bg-white/5 p-3 rounded-r-xl rounded-bl-xl leading-relaxed">
-                                {comment.text}
-                              </p>
-                           </div>
+              {/* Input Area */}
+              <div className="flex gap-2 mb-6">
+                <Input
+                  placeholder="Any issue or feels slow in the link? Drop a message here..."
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  className="bg-white/5 border-white/10 focus-visible:ring-primary text-white"
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddComment()}
+                />
+                <Button onClick={handleAddComment} size="icon" className="bg-primary hover:bg-primary/90 text-white" disabled={postCommentMutation.isPending}>
+                  <Send className="w-4 h-4" />
+                </Button>
+              </div>
+
+              {/* Comment List */}
+              <ScrollArea className="h-[300px] w-full pr-4 rounded-xl border border-white/5 bg-black/20 p-4">
+                {comments.length === 0 ? (
+                  <div className="text-center text-muted-foreground py-10">No comments yet. Be the first! 👻</div>
+                ) : (
+                  <div className="flex flex-col gap-4">
+                    {comments.map((comment: any) => (
+                      <div key={comment.id} className="flex gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                        {/* Anonymous Avatar */}
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl shrink-0 ${comment.colorClass}`}>
+                          {comment.emoji}
                         </div>
-                      ))}
-                    </div>
-                  )}
-               </ScrollArea>
+
+                        {/* Message Body */}
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-white/80">Anonymous</span>
+                            <span className="text-[10px] text-muted-foreground bg-white/5 px-1.5 py-0.5 rounded-sm">
+                              {comment.createdAt ? format(new Date(comment.createdAt), 'MMM d, h:mm a') : 'Just now'}
+                            </span>
+                          </div>
+                          <p className="text-sm text-muted-foreground bg-white/5 p-3 rounded-r-xl rounded-bl-xl leading-relaxed">
+                            {comment.text}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
             </div>
 
           </div>
@@ -444,22 +456,22 @@ export default function TorrentDetail() {
 
         <Dialog open={showFunnyPopup} onOpenChange={setShowFunnyPopup}>
           <DialogContent className="sm:max-w-md bg-zinc-950 border-white/10 text-center p-8">
-             <div className="flex flex-col items-center gap-6">
-                <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center animate-pulse">
-                  <Construction className="w-10 h-10 text-yellow-500" />
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-2xl font-bold text-white font-display">Whoa there, eager beaver!</h3>
-                  <p className="text-muted-foreground leading-relaxed">
-                    I'm working on it, okay? Rome wasn't built in a day, and neither is this streaming feature. 
-                    <br/><br/>
-                    <span className="text-primary font-medium">Go download the magnet link like a caveman for now.</span>
-                  </p>
-                </div>
-                <Button onClick={() => setShowFunnyPopup(false)} variant="outline" className="mt-2 w-full border-white/10 hover:bg-white/5">
-                  Fine, I'll wait...
-                </Button>
-             </div>
+            <div className="flex flex-col items-center gap-6">
+              <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center animate-pulse">
+                <Construction className="w-10 h-10 text-yellow-500" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-2xl font-bold text-white font-display">Whoa there, eager beaver!</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  I'm working on it, okay? Rome wasn't built in a day, and neither is this streaming feature.
+                  <br /><br />
+                  <span className="text-primary font-medium">Go download the magnet link like a caveman for now.</span>
+                </p>
+              </div>
+              <Button onClick={() => setShowFunnyPopup(false)} variant="outline" className="mt-2 w-full border-white/10 hover:bg-white/5">
+                Fine, I'll wait...
+              </Button>
+            </div>
           </DialogContent>
         </Dialog>
 
