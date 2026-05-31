@@ -84,6 +84,7 @@ export default function TorrentDetail() {
   const [isFavorited, setIsFavorited] = useState(false);
   const [isWatchLater, setIsWatchLater] = useState(false);
   const [showFunnyPopup, setShowFunnyPopup] = useState(false);
+  const [isStreamLoading, setIsStreamLoading] = useState(false);
 
   const [voteStatus, setVoteStatus] = useState<'like' | 'dislike' | null>(null);
   const [likesCount, setLikesCount] = useState(0);
@@ -294,10 +295,29 @@ export default function TorrentDetail() {
               {torrent.category === "Movies" && (
                 <Button
                   size="lg"
-                  onClick={() => setShowFunnyPopup(true)}
+                  disabled={isStreamLoading}
+                  onClick={async () => {
+                    setIsStreamLoading(true);
+                    const title = torrent.title.replace(/\s*\(?\d{4}\)?\s*$/, '').trim();
+                    const year = torrent.releaseYear || torrent.title.match(/\b(19|20)\d{2}\b/)?.[0] || '';
+                    let tmdbId = '';
+                    try {
+                      const TMDB_KEY = '6ee1bab484e315e98c68e10e963e59d1';
+                      const res = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_KEY}&query=${encodeURIComponent(title)}${year ? `&year=${year}` : ''}`);
+                      const data = await res.json();
+                      if (data.results && data.results.length > 0) tmdbId = String(data.results[0].id);
+                    } catch { /* fallback */ }
+                    if (!tmdbId) tmdbId = String(torrent.id);
+                    const params = new URLSearchParams({
+                      id: tmdbId, type: 'movie', title: torrent.title,
+                      year: String(year), poster: torrent.imageUrl || '',
+                      overview: torrent.description || '', rating: '4.5',
+                    });
+                    window.location.href = `/stream.html?${params.toString()}`;
+                  }}
                   className="w-full text-lg font-bold h-12 bg-white text-black hover:bg-primary hover:text-white transition-all duration-300 shadow-lg hover:scale-[1.02] active:scale-[0.98] group"
                 >
-                  <Play className="mr-2 h-5 w-5 fill-current" /> Watch Now
+                  <Play className="mr-2 h-5 w-5 fill-current" /> {isStreamLoading ? 'Finding Stream…' : 'Watch Now'}
                 </Button>
               )}
 

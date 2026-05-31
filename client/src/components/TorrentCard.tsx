@@ -1,11 +1,52 @@
 import { Link } from "wouter";
 import { type TorrentWithAuthor } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
-import { Play, Heart, Plus, Check, Star } from "lucide-react";
+import { Play, Heart, Plus, Check, Star, Tv } from "lucide-react";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import { auth } from "@/firebase";
+
+// Helper: build stream.html URL from torrent data using TMDB search
+async function openStreamPage(torrent: TorrentWithAuthor) {
+  const title = torrent.title.replace(/\s*\(?\d{4}\)?\s*$/, '').trim();
+  const year = torrent.releaseYear ||
+    torrent.title.match(/\b(19|20)\d{2}\b/)?.[0] || '';
+  const poster = torrent.imageUrl || '';
+
+  // Try to find TMDB ID by searching title
+  let tmdbId = '';
+  try {
+    const TMDB_KEY = '6ee1bab484e315e98c68e10e963e59d1';
+    const res = await fetch(
+      `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_KEY}&query=${encodeURIComponent(title)}${year ? `&year=${year}` : ''}`
+    );
+    const data = await res.json();
+    if (data.results && data.results.length > 0) {
+      const match = data.results[0];
+      tmdbId = String(match.id);
+    }
+  } catch {
+    // If TMDB search fails, we can't stream — but still navigate
+  }
+
+  if (!tmdbId) {
+    // Fallback: use the torrent's own ID (won't work with most sources, but avoids dead-end)
+    tmdbId = String(torrent.id);
+  }
+
+  const params = new URLSearchParams({
+    id: tmdbId,
+    type: 'movie',
+    title: torrent.title,
+    year: String(year),
+    poster: poster,
+    overview: torrent.description || '',
+    rating: '4.5',
+  });
+
+  window.location.href = `/stream.html?${params.toString()}`;
+}
 
 export function TorrentCard({
   torrent,
@@ -59,6 +100,14 @@ export function TorrentCard({
       toast({ title: `Added to ${listType}`, description: `"${torrent.title}" added!` });
     }
     localStorage.setItem(storageKey, JSON.stringify(updatedData));
+  };
+
+  const handleWatchNow = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (torrent.category === "Movies") {
+      openStreamPage(torrent);
+    }
   };
 
   return (
@@ -127,6 +176,18 @@ export function TorrentCard({
             </div>
           </a>
         </Link>
+
+        {/* WATCH NOW BUTTON (Movies only) — bottom overlay */}
+        {torrent.category === "Movies" && (
+          <button
+            onClick={handleWatchNow}
+            className="absolute bottom-14 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-amber-500/90 text-black text-xs font-bold shadow-lg opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 hover:bg-amber-400 active:scale-95"
+            title="Stream Now"
+          >
+            <Tv className="w-3.5 h-3.5" />
+            Watch Now
+          </button>
+        )}
 
         {/* SEPARATE ACTION BUTTONS (OUTSIDE LINK) */}
         {isAuthenticated && (

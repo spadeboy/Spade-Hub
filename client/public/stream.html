@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stream — Spade Hub</title>
+  <meta name="description" content="Watch movies and TV shows on Spade Hub" />
+  <link rel="icon" type="image/png" href="/favicon.png?v=2" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #000000;
+      --bg-card: #0a0a0a;
+      --bg-surface: #111111;
+      --gold: #d4a843;
+      --gold-dim: #b8922e;
+      --gold-glow: rgba(212, 168, 67, 0.15);
+      --text: #f0f0f0;
+      --text-dim: #888888;
+      --text-muted: #555555;
+      --border: rgba(255,255,255,0.08);
+      --font-sans: 'Inter', sans-serif;
+      --font-display: 'Outfit', sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* === HEADER BAR === */
+    .top-bar {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 20px;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .back-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px; border-radius: 8px;
+      background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+      color: var(--text); font-size: 14px; font-weight: 500;
+      cursor: pointer; text-decoration: none;
+      transition: all 0.2s;
+      font-family: var(--font-sans);
+    }
+    .back-btn:hover { background: var(--gold-glow); color: var(--gold); border-color: var(--gold-dim); }
+    .back-btn svg { width: 16px; height: 16px; }
+    .top-title {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 16px; color: var(--text-dim);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    /* === PLAYER CONTAINER === */
+    .player-wrap {
+      max-width: 1200px; margin: 0 auto;
+      padding: 0 16px;
+    }
+    .player-box {
+      position: relative; width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #050505;
+      border-radius: 12px; overflow: hidden;
+      border: 1px solid var(--border);
+      margin-top: 16px;
+    }
+    .player-box iframe {
+      width: 100%; height: 100%; border: none;
+      position: absolute; top: 0; left: 0;
+    }
+
+    /* === SPINNER === */
+    .spinner-overlay {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: #050505; z-index: 10;
+      transition: opacity 0.4s;
+    }
+    .spinner-overlay.hidden { opacity: 0; pointer-events: none; }
+    .spinner {
+      width: 48px; height: 48px;
+      border: 3px solid rgba(255,255,255,0.1);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    .spinner-text { margin-top: 16px; color: var(--text-dim); font-size: 14px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* === TV CONTROLS === */
+    .tv-controls {
+      display: none; /* shown via JS for TV */
+      gap: 12px; padding: 16px 0;
+      max-width: 1200px; margin: 0 auto;
+      flex-wrap: wrap; align-items: center;
+    }
+    .tv-controls.visible { display: flex; }
+    .tv-controls label { font-size: 13px; color: var(--text-dim); font-weight: 500; }
+    .tv-controls select {
+      padding: 8px 14px; border-radius: 8px;
+      background: var(--bg-surface); border: 1px solid var(--border);
+      color: var(--text); font-size: 14px;
+      font-family: var(--font-sans);
+      cursor: pointer; outline: none;
+      transition: border-color 0.2s;
+    }
+    .tv-controls select:focus { border-color: var(--gold-dim); }
+
+    /* === SOURCE TABS === */
+    .source-bar {
+      display: flex; gap: 8px;
+      padding: 16px 0;
+      max-width: 1200px; margin: 0 auto;
+      overflow-x: auto; flex-wrap: wrap;
+    }
+    .source-btn {
+      padding: 8px 18px; border-radius: 8px;
+      background: var(--bg-surface); border: 1px solid var(--border);
+      color: var(--text-dim); font-size: 13px; font-weight: 500;
+      cursor: pointer; white-space: nowrap;
+      transition: all 0.2s;
+      font-family: var(--font-sans);
+    }
+    .source-btn:hover { border-color: var(--gold-dim); color: var(--text); }
+    .source-btn.active {
+      background: var(--gold-glow); border-color: var(--gold);
+      color: var(--gold); font-weight: 600;
+    }
+
+    /* === MOVIE INFO === */
+    .info-section {
+      max-width: 1200px; margin: 0 auto;
+      padding: 32px 16px 40px;
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 28px;
+    }
+    .info-poster {
+      width: 100%; aspect-ratio: 2/3;
+      border-radius: 12px; overflow: hidden;
+      border: 1px solid var(--border);
+      background: var(--bg-surface);
+    }
+    .info-poster img { width: 100%; height: 100%; object-fit: cover; }
+    .info-details { display: flex; flex-direction: column; gap: 12px; }
+    .info-title {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 28px; line-height: 1.2;
+    }
+    .info-meta {
+      display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+    }
+    .info-meta span {
+      font-size: 13px; color: var(--text-dim);
+      padding: 4px 10px; border-radius: 6px;
+      background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+    }
+    .info-meta .rating {
+      color: var(--gold); border-color: var(--gold-dim);
+      background: var(--gold-glow); font-weight: 600;
+    }
+    .info-overview {
+      font-size: 15px; line-height: 1.7;
+      color: var(--text-dim); max-width: 700px;
+    }
+
+    /* === RECOMMENDATIONS === */
+    .recs-section {
+      max-width: 1200px; margin: 0 auto;
+      padding: 0 16px 60px;
+    }
+    .recs-title {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 20px; margin-bottom: 20px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .recs-title::before {
+      content: ''; display: block;
+      width: 4px; height: 24px; border-radius: 4px;
+      background: var(--gold);
+    }
+    .recs-row {
+      display: flex; gap: 14px;
+      overflow-x: auto; padding-bottom: 8px;
+      scroll-snap-type: x mandatory;
+    }
+    .recs-row::-webkit-scrollbar { height: 4px; }
+    .recs-row::-webkit-scrollbar-track { background: transparent; }
+    .recs-row::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    .rec-card {
+      flex-shrink: 0; width: 160px;
+      cursor: pointer; text-decoration: none;
+      scroll-snap-align: start;
+      transition: transform 0.2s;
+    }
+    .rec-card:hover { transform: translateY(-4px); }
+    .rec-card img {
+      width: 100%; aspect-ratio: 2/3;
+      object-fit: cover; border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg-surface);
+    }
+    .rec-card .rec-name {
+      font-size: 13px; font-weight: 500;
+      margin-top: 8px; color: var(--text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .rec-card .rec-year {
+      font-size: 11px; color: var(--text-muted);
+    }
+
+    /* === RESPONSIVE === */
+    @media (max-width: 640px) {
+      .info-section { grid-template-columns: 120px 1fr; gap: 16px; padding: 20px 16px 32px; }
+      .info-title { font-size: 22px; }
+      .player-box { border-radius: 8px; margin-top: 8px; }
+      .source-bar { padding: 12px 16px; gap: 6px; }
+      .tv-controls { padding: 12px 16px; }
+      .rec-card { width: 130px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <a href="/" class="back-btn" id="backBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+      Back
+    </a>
+    <span class="top-title" id="topTitle">Loading…</span>
+  </div>
+
+  <!-- PLAYER -->
+  <div class="player-wrap">
+    <!-- TV CONTROLS (only for type=tv) -->
+    <div class="tv-controls" id="tvControls">
+      <label>Season</label>
+      <select id="seasonSelect"></select>
+      <label>Episode</label>
+      <select id="episodeSelect"></select>
+    </div>
+
+    <div class="player-box" id="playerBox">
+      <div class="spinner-overlay" id="spinner">
+        <div class="spinner"></div>
+        <div class="spinner-text">Loading stream…</div>
+      </div>
+      <iframe id="playerFrame" allowfullscreen allow="autoplay; encrypted-media; fullscreen; picture-in-picture"></iframe>
+    </div>
+  </div>
+
+  <!-- SOURCE TABS -->
+  <div class="source-bar player-wrap" id="sourceBar"></div>
+
+  <!-- MOVIE INFO -->
+  <div class="info-section" id="infoSection">
+    <div class="info-poster" id="posterBox"></div>
+    <div class="info-details">
+      <h1 class="info-title" id="infoTitle"></h1>
+      <div class="info-meta" id="infoMeta"></div>
+      <p class="info-overview" id="infoOverview"></p>
+    </div>
+  </div>
+
+  <!-- RECOMMENDATIONS -->
+  <div class="recs-section" id="recsSection" style="display:none;">
+    <h2 class="recs-title">More Like This</h2>
+    <div class="recs-row" id="recsRow"></div>
+  </div>
+
+<script>
+(function() {
+  // ─── Parse URL params ───
+  const params = new URLSearchParams(window.location.search);
+  const tmdbId   = params.get('id') || '';
+  const type     = params.get('type') || 'movie'; // movie | tv
+  const title    = params.get('title') || 'Untitled';
+  const year     = params.get('year') || '';
+  const poster   = params.get('poster') || '';
+  const backdrop = params.get('backdrop') || '';
+  const overview = params.get('overview') || '';
+  const rating   = params.get('rating') || '';
+  const seasons  = parseInt(params.get('seasons') || '1', 10);
+
+  // TMDB API key (optional — set here if you have one)
+  const TMDB_KEY = '';
+
+  let currentSource = 0;
+  let currentSeason = 1;
+  let currentEpisode = 1;
+
+  // ─── Sources ───
+  function buildSources(id, mediaType, s, e) {
+    if (mediaType === 'tv') {
+      return [
+        { name: 'VidSrc',  url: `https://vidsrc.to/embed/tv/${id}/${s}/${e}` },
+        { name: 'VidSrc2', url: `https://vidsrc.me/embed/tv?tmdb=${id}&season=${s}&episode=${e}` },
+        { name: '2Embed',  url: `https://www.2embed.cc/embedtv/${id}&s=${s}&e=${e}` },
+        { name: 'VidLink', url: `https://vidlink.pro/tv/${id}/${s}/${e}` },
+        { name: 'EmbedSu', url: `https://embed.su/embed/tv/${id}/${s}/${e}` },
+      ];
+    }
+    return [
+      { name: 'VidSrc',  url: `https://vidsrc.to/embed/movie/${id}` },
+      { name: 'VidSrc2', url: `https://vidsrc.me/embed/movie?tmdb=${id}` },
+      { name: '2Embed',  url: `https://www.2embed.cc/embed/${id}` },
+      { name: 'VidLink', url: `https://vidlink.pro/movie/${id}` },
+      { name: 'EmbedSu', url: `https://embed.su/embed/movie/${id}` },
+    ];
+  }
+
+  // ─── Load player ───
+  function loadPlayer() {
+    const sources = buildSources(tmdbId, type, currentSeason, currentEpisode);
+    const frame = document.getElementById('playerFrame');
+    const spinner = document.getElementById('spinner');
+
+    spinner.classList.remove('hidden');
+    frame.onload = () => spinner.classList.add('hidden');
+    frame.src = sources[currentSource].url;
+  }
+
+  // ─── Source bar ───
+  function renderSourceBar() {
+    const bar = document.getElementById('sourceBar');
+    const sources = buildSources(tmdbId, type, currentSeason, currentEpisode);
+    bar.innerHTML = '';
+    sources.forEach((s, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'source-btn' + (i === currentSource ? ' active' : '');
+      btn.textContent = s.name;
+      btn.onclick = () => { currentSource = i; renderSourceBar(); loadPlayer(); };
+      bar.appendChild(btn);
+    });
+  }
+
+  // ─── TV controls ───
+  function setupTVControls() {
+    if (type !== 'tv') return;
+    const wrap = document.getElementById('tvControls');
+    const seasonSel = document.getElementById('seasonSelect');
+    const epSel = document.getElementById('episodeSelect');
+    wrap.classList.add('visible');
+
+    // Populate seasons
+    seasonSel.innerHTML = '';
+    for (let s = 1; s <= seasons; s++) {
+      const opt = document.createElement('option');
+      opt.value = s; opt.textContent = 'Season ' + s;
+      if (s === currentSeason) opt.selected = true;
+      seasonSel.appendChild(opt);
+    }
+
+    // Episodes (default 24 per season, TMDB fetch can update)
+    function populateEpisodes(count) {
+      epSel.innerHTML = '';
+      for (let e = 1; e <= count; e++) {
+        const opt = document.createElement('option');
+        opt.value = e; opt.textContent = 'Episode ' + e;
+        if (e === currentEpisode) opt.selected = true;
+        epSel.appendChild(opt);
+      }
+    }
+    populateEpisodes(24);
+
+    // If TMDB key exists, fetch real episode count
+    if (TMDB_KEY) {
+      fetch(`https://api.themoviedb.org/3/tv/${tmdbId}/season/${currentSeason}?api_key=${TMDB_KEY}`)
+        .then(r => r.json())
+        .then(data => { if (data.episodes) populateEpisodes(data.episodes.length); })
+        .catch(() => {});
+    }
+
+    seasonSel.onchange = () => {
+      currentSeason = parseInt(seasonSel.value, 10);
+      currentEpisode = 1;
+      setupTVControls();
+      loadPlayer();
+    };
+    epSel.onchange = () => {
+      currentEpisode = parseInt(epSel.value, 10);
+      loadPlayer();
+    };
+  }
+
+  // ─── Movie info ───
+  function renderInfo() {
+    document.title = `${title} — Spade Hub`;
+    document.getElementById('topTitle').textContent = title;
+    document.getElementById('infoTitle').textContent = title;
+    document.getElementById('infoOverview').textContent = overview || 'No overview available.';
+
+    // Poster
+    const posterBox = document.getElementById('posterBox');
+    if (poster) {
+      posterBox.innerHTML = `<img src="${poster}" alt="${title}" />`;
+    } else {
+      posterBox.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-size:13px;">No Poster</div>`;
+    }
+
+    // Meta
+    const meta = document.getElementById('infoMeta');
+    meta.innerHTML = '';
+    if (year) meta.innerHTML += `<span>${year}</span>`;
+    if (type === 'tv') meta.innerHTML += `<span>TV Series</span>`;
+    if (rating) meta.innerHTML += `<span class="rating">★ ${parseFloat(rating).toFixed(1)}</span>`;
+  }
+
+  // ─── Recommendations (TMDB) ───
+  function loadRecommendations() {
+    if (!TMDB_KEY || !tmdbId) return;
+    const endpoint = type === 'tv'
+      ? `https://api.themoviedb.org/3/tv/${tmdbId}/recommendations?api_key=${TMDB_KEY}`
+      : `https://api.themoviedb.org/3/movie/${tmdbId}/recommendations?api_key=${TMDB_KEY}`;
+
+    fetch(endpoint)
+      .then(r => r.json())
+      .then(data => {
+        const results = (data.results || []).slice(0, 12);
+        if (results.length === 0) return;
+
+        document.getElementById('recsSection').style.display = 'block';
+        const row = document.getElementById('recsRow');
+        row.innerHTML = '';
+
+        results.forEach(item => {
+          const posterPath = item.poster_path
+            ? `https://image.tmdb.org/t/p/w300${item.poster_path}` : '';
+          const itemTitle = item.title || item.name || 'Unknown';
+          const itemYear = (item.release_date || item.first_air_date || '').slice(0, 4);
+          const itemType = item.media_type || type;
+          const itemId = item.id;
+
+          const card = document.createElement('a');
+          card.className = 'rec-card';
+          card.href = `stream.html?id=${itemId}&type=${itemType}&title=${encodeURIComponent(itemTitle)}&year=${itemYear}&poster=${encodeURIComponent(posterPath)}&overview=${encodeURIComponent(item.overview || '')}&&rating=${item.vote_average || ''}`;
+
+          card.innerHTML = posterPath
+            ? `<img src="${posterPath}" alt="${itemTitle}" loading="lazy"/><div class="rec-name">${itemTitle}</div><div class="rec-year">${itemYear}</div>`
+            : `<div style="width:100%;aspect-ratio:2/3;background:var(--bg-surface);border-radius:10px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:12px">No Image</div><div class="rec-name">${itemTitle}</div><div class="rec-year">${itemYear}</div>`;
+          row.appendChild(card);
+        });
+      })
+      .catch(() => {});
+  }
+
+  // ─── Richer metadata from TMDB ───
+  function fetchRicherMetadata() {
+    if (!TMDB_KEY || !tmdbId) return;
+    const endpoint = type === 'tv'
+      ? `https://api.themoviedb.org/3/tv/${tmdbId}?api_key=${TMDB_KEY}`
+      : `https://api.themoviedb.org/3/movie/${tmdbId}?api_key=${TMDB_KEY}`;
+
+    fetch(endpoint)
+      .then(r => r.json())
+      .then(data => {
+        if (data.overview && !overview) {
+          document.getElementById('infoOverview').textContent = data.overview;
+        }
+        // Add genres
+        const meta = document.getElementById('infoMeta');
+        if (data.genres) {
+          data.genres.forEach(g => {
+            meta.innerHTML += `<span>${g.name}</span>`;
+          });
+        }
+        if (data.runtime) {
+          meta.innerHTML += `<span>${data.runtime} min</span>`;
+        }
+      })
+      .catch(() => {});
+  }
+
+  // ─── Init ───
+  renderInfo();
+  renderSourceBar();
+  loadPlayer();
+  setupTVControls();
+  fetchRicherMetadata();
+  loadRecommendations();
+})();
+</script>
+
+</body>
+</html>

@@ -84,7 +84,27 @@ export function HeroCarousel({ featured }: HeroCarouselProps) {
 
                   {/* Buttons */}
                   <div className="flex flex-wrap items-center gap-4 pt-4">
-                    <Button size="lg" className="bg-primary hover:bg-primary/90 text-white rounded-full px-8 h-12 text-base font-semibold shadow-xl shadow-primary/20">
+                    <Button
+                      size="lg"
+                      className="bg-primary hover:bg-primary/90 text-white rounded-full px-8 h-12 text-base font-semibold shadow-xl shadow-primary/20"
+                      onClick={async () => {
+                        const cleanTitle = item.title.replace(/\s*\(?\d{4}\)?\s*$/, '').trim();
+                        const yr = item.releaseYear || item.title.match(/\b(19|20)\d{2}\b/)?.[0] || '';
+                        let tmdbId = '';
+                        try {
+                          const res = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=6ee1bab484e315e98c68e10e963e59d1&query=${encodeURIComponent(cleanTitle)}${yr ? `&year=${yr}` : ''}`);
+                          const data = await res.json();
+                          if (data.results && data.results.length > 0) tmdbId = String(data.results[0].id);
+                        } catch { /* fallback */ }
+                        if (!tmdbId) tmdbId = String(item.id);
+                        const params = new URLSearchParams({
+                          id: tmdbId, type: 'movie', title: item.title,
+                          year: String(yr), poster: item.imageUrl || '',
+                          overview: item.description || '', rating: '4.5',
+                        });
+                        window.location.href = `/stream.html?${params.toString()}`;
+                      }}
+                    >
                       <Play className="w-5 h-5 mr-2 fill-current" />
                       Watch Now
                     </Button>
